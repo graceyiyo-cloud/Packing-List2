@@ -66,6 +66,9 @@
           "大人個人用品": ["大人換洗衣物", "化妝品、保養品", "洗髮精、沐浴乳", "鏡子"],
           "備註": []
         };
+        
+        // 定義分類順序，防止資料庫同步時造成順序跳動
+        const CATEGORY_ORDER = ["醫藥與防護", "電子產品", "小孩衣物用品", "大人個人用品", "備註"];
 
         const LoadingSpinner = () => (
           <div className="flex justify-center items-center h-40">
@@ -352,7 +355,12 @@
                     <div className="flex justify-end">
                       <button onClick={resetList} className="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 px-4 rounded-full flex items-center gap-2 transition-colors"><Icons.RefreshCw />重置所有勾選</button>
                     </div>
-                    {Object.keys(data).map((cat) => (
+                    {Object.keys(data).sort((a, b) => {
+                        const idxA = CATEGORY_ORDER.indexOf(a);
+                        const idxB = CATEGORY_ORDER.indexOf(b);
+                        // 如果有不在清單內的分類，排到最後
+                        return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
+                    }).map((cat) => (
                       <div key={cat} className="bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden">
                         <div className="bg-orange-50 px-4 py-3 border-b border-orange-100">
                           <h2 className="font-bold text-orange-800 text-lg flex items-center gap-2">{cat}<span className="text-sm font-normal text-orange-400 bg-white px-2 py-0.5 rounded-full">{data[cat].length}</span></h2>
