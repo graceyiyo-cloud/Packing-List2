@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行李清單雲端版</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.292.0"
+      }
+    }
+    </script>
+</head>
+<body class="bg-[#fffaf0]">
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Trash2, Plus, RefreshCw, Check, LogIn, Baby, ArrowLeft, HelpCircle, X } from 'lucide-react';
+
+        // --- Firebase Import (使用 Google 官方 CDN) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // --- Firebase 設定 ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyB34DnVg26SFsKh3yj3r01YKCflCKiOvjo",
+          authDomain: "packing-list-app-3730f.firebaseapp.com",
+          projectId: "packing-list-app-3730f",
+          storageBucket: "packing-list-app-3730f.firebasestorage.app",
+          messagingSenderId: "29252379952",
+          appId: "1:29252379952:web:0f482df90af76c227ed4f5",
+          measurementId: "G-44WGM8ZX4P"
+        };
+
+        // --- 初始化 Firebase ---
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = 'my-packing-list-v1';
+
+        // --- 初始清單資料 ---
+        const initialKidsData = {
+          "醫藥與防護": ["備用藥品(擦的、退燒、咳嗽藥水)", "耳溫槍", "電蚊香", "兒童防曬乳", "長棉花棒", "衛生棉，棉條", "濕紙巾", "保潔墊"],
+          "電子產品": ["小孩手機", "行動電源", "插頭+充電線", "小電風扇", "吹風機", "自拍腳架"],
+          "小孩衣物用品": ["替換褲", "被子、枕頭", "外套", "襪子", "拖鞋", "水壺", "保久乳", "食物剪刀", "孩子們零食", "玩沙組", "浴巾"],
+          "大人個人用品": ["大人換洗衣物", "化妝品、保養品", "洗髮精、沐浴乳", "鏡子"],
+          "備註": []
+        };
+
+        const LoadingSpinner = () => (
+          <div className="flex justify-center items-center h-40">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+          </div>
+        );
+
+        function App() {
+          const [user, setUser] = useState(null);
+          const [listId, setListId] = useState('');
+          const [enteredId, setEnteredId] = useState('');
+          const [data, setData] = useState(initialKidsData);
+          const [checkedItems, setCheckedItems] = useState([]);
+          const [loading, setLoading] = useState(false);
+          const [isJoined, setIsJoined] = useState(false);
+          const [newItemText, setNewItemText] = useState({});
+          const [showHelp, setShowHelp] = useState(false);
+
+          useEffect(() => {
+            signInAnonymously(auth).catch((err) => console.error("登入失敗:", err));
+            const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
+            return () => unsubscribe();
+          }, []);
+
+          useEffect(() => {
+            if (!user || !listId) return;
+            setLoading(true);
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', listId);
+
+            const unsubscribe = onSnapshot(docRef, (docSnap) => {
+              setLoading(false);
+              if (docSnap.exists()) {
+                const remoteData = docSnap.data();
+                if (remoteData.listData) setData(remoteData.listData);
+                if (remoteData.checkedItems) setCheckedItems(remoteData.checkedItems);
+              } else {
+                setDoc(docRef, {
+                  listData: initialKidsData,
+                  checkedItems: [],
+                  createdAt: new Date().toISOString()
+                });
+                setData(initialKidsData);
+                setCheckedItems([]);
+              }
+            }, (error) => {
+              console.error("同步錯誤:", error);
+              setLoading(false);
+            });
+            return () => unsubscribe();
+          }, [user, listId]);
+
+          const handleJoin = (e) => {
+            e.preventDefault();
+            if (!enteredId.trim()) return;
+            const cleanId = enteredId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '');
+            setListId(cleanId);
+            setIsJoined(true);
+            localStorage.setItem('kids_packing_last_id', cleanId);
+          };
+
+          const handleLogout = () => {
+            setIsJoined(false);
+            setListId('');
+            localStorage.removeItem('kids_packing_last_id');
+          };
+
+          useEffect(() => {
+            const lastId = localStorage.getItem('kids_packing_last_id');
+            if (lastId) setEnteredId(lastId);
+          }, []);
+
+          const toggleCheck = async (cat, item) => {
+            if (!user || !listId) return;
+            const key = `${cat}-${item}`;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', listId);
+            
+            if (checkedItems.includes(key)) {
+              await updateDoc(docRef, { checkedItems: arrayRemove(key) });
+            } else {
+              await updateDoc(docRef, { checkedItems: arrayUnion(key) });
+            }
+          };
+
+          const addItem = async (cat) => {
+            if (!user || !listId) return;
+            const text = newItemText[cat]?.trim();
+            if (!text) return;
+
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', listId);
+            const newData = { ...data };
+            if (!newData[cat]) newData[cat] = [];
+            newData[cat].push(text);
+
+            await updateDoc(docRef, { listData: newData });
+            setNewItemText(prev => ({ ...prev, [cat]: '' }));
+          };
+
+          const deleteItem = async (cat, itemIndex) => {
+            if (!user || !listId) return;
+            if (!confirm("確定要刪除這個項目嗎？")) return;
+
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', listId);
+            const newData = { ...data };
+            const itemValue = newData[cat][itemIndex];
+            const key = `${cat}-${itemValue}`;
+
+            newData[cat].splice(itemIndex, 1);
+            
+            await updateDoc(docRef, { 
+              listData: newData,
+              checkedItems: arrayRemove(key)
+            });
+          };
+
+          const resetList = async () => {
+            if (!user || !listId) return;
+            if (!confirm("確定要清除所有勾選狀態嗎？(項目會保留)")) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', listId);
+            await updateDoc(docRef, { checkedItems: [] });
+          };
+
+          if (!isJoined) {
+            return (
+              <div className="min-h-screen bg-[#fffaf0] flex items-center justify-center p-4 font-sans">
+                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-orange-100 relative">
+                  <button 
+                    onClick={() => setShowHelp(true)}
+                    className="absolute top-4 right-4 text-orange-400 hover:text-orange-600 transition-colors"
+                  >
+                    <HelpCircle size={24} />
+                  </button>
+                  <div className="text-center mb-8">
+                    <div className="inline-block p-4 rounded-full bg-orange-100 mb-4">
+                      <Baby size={48} className="text-orange-500" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">行李清單雲端版</h1>
+                    <p className="text-gray-500">輸入一個名稱，多人同步管理</p>
+                  </div>
+                  <form onSubmit={handleJoin} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">清單 ID / 名稱</label>
+                      <input 
+                        type="text" 
+                        value={enteredId}
+                        onChange={(e) => setEnteredId(e.target.value)}
+                        placeholder="例如: 王家日本行2024"
+                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                      />
+                      <p className="text-xs text-gray-400 mt-2 ml-1">* 在另一台裝置輸入相同的名稱即可同步</p>
+                    </div>
+                    <button 
+                      type="submit"
+                      disabled={!enteredId.trim()}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <LogIn size={20} />
+                      開始整理行李
+                    </button>
+                  </form>
+                  {showHelp && (
+                    <div className="absolute inset-0 bg-white/95 z-50 rounded-2xl p-6 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
+                       <h3 className="text-xl font-bold text-orange-600 mb-4">如何使用？</h3>
+                       <ol className="text-left text-sm text-gray-700 space-y-3 mb-6 list-decimal pl-4">
+                         <li>在下方欄位設定一個<b>好記的名字</b>（例：日本行）。</li>
+                         <li>請家人在他們的手機開啟網頁。</li>
+                         <li>輸入<b>一模一樣的名字</b>。</li>
+                         <li>成功！現在你們看到的畫面是同步的。</li>
+                       </ol>
+                       <button onClick={() => setShowHelp(false)} className="bg-gray-800 text-white px-6 py-2 rounded-full text-sm font-bold">我知道了</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-h-screen bg-[#fffaf0] font-sans pb-20 relative">
+              {showHelp && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                  <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
+                    <button onClick={() => setShowHelp(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X size={24} /></button>
+                    <h3 className="text-xl font-bold text-orange-600 mb-4 flex items-center gap-2"><HelpCircle size={24} />操作教學</h3>
+                    <ul className="text-left text-gray-700 space-y-4 mb-6">
+                      <li className="flex gap-3"><div className="bg-orange-100 p-2 rounded-full h-8 w-8 flex items-center justify-center text-orange-600 font-bold text-xs flex-shrink-0">1</div><div><b>邀請家人：</b>告訴他們現在這個清單 ID (<b>{listId}</b>)，輸入一樣的 ID 就能加入。</div></li>
+                      <li className="flex gap-3"><div className="bg-orange-100 p-2 rounded-full h-8 w-8 flex items-center justify-center text-orange-600 font-bold text-xs flex-shrink-0">2</div><div><b>即時同步：</b>有人勾選或新增物品，所有人的畫面都會自動更新。</div></li>
+                      <li className="flex gap-3"><div className="bg-orange-100 p-2 rounded-full h-8 w-8 flex items-center justify-center text-orange-600 font-bold text-xs flex-shrink-0">3</div><div><b>新增物品：</b>在每個分類下方輸入文字，按下「+」按鈕。</div></li>
+                    </ul>
+                    <button onClick={() => setShowHelp(false)} className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold hover:bg-orange-600">開始使用</button>
+                  </div>
+                </div>
+              )}
+              <div className="bg-white shadow-sm sticky top-0 z-10 border-b border-orange-100">
+                <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button onClick={handleLogout} className="text-gray-400 hover:text-gray-600"><ArrowLeft size={24} /></button>
+                    <h1 className="text-lg font-bold text-orange-600 truncate max-w-[150px] sm:max-w-xs">{listId}</h1>
+                  </div>
+                  <div className="flex items-center gap-3">
+                     <button onClick={() => setShowHelp(true)} className="text-orange-400 hover:text-orange-600"><HelpCircle size={24} /></button>
+                     <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>同步中</div>
+                  </div>
+                </div>
+                {(() => {
+                  let total = 0;
+                  let currentCheckedCount = 0;
+                  Object.keys(data).forEach(cat => {
+                    total += data[cat].length;
+                    data[cat].forEach(item => { if (checkedItems.includes(`${cat}-${item}`)) currentCheckedCount++; });
+                  });
+                  const percent = total === 0 ? 0 : Math.round((currentCheckedCount / total) * 100);
+                  return (<div className="h-1.5 w-full bg-orange-100"><div className="h-full bg-orange-500 transition-all duration-500 ease-out" style={{ width: `${percent}%` }}></div></div>);
+                })()}
+              </div>
+
+              <div className="max-w-2xl mx-auto p-4 space-y-6">
+                {loading ? <LoadingSpinner /> : (
+                  <>
+                    <div className="flex justify-end">
+                      <button onClick={resetList} className="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 px-4 rounded-full flex items-center gap-2 transition-colors"><RefreshCw size={16} />重設所有勾選</button>
+                    </div>
+                    {Object.keys(data).map((cat) => (
+                      <div key={cat} className="bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden">
+                        <div className="bg-orange-50 px-4 py-3 border-b border-orange-100">
+                          <h2 className="font-bold text-orange-800 text-lg flex items-center gap-2">{cat}<span className="text-sm font-normal text-orange-400 bg-white px-2 py-0.5 rounded-full">{data[cat].length}</span></h2>
+                        </div>
+                        <div className="divide-y divide-gray-100">
+                          {data[cat].map((item, idx) => {
+                            const isChecked = checkedItems.includes(`${cat}-${item}`);
+                            return (
+                              <div key={`${cat}-${idx}`} className={`flex items-center p-4 hover:bg-gray-50 transition-colors cursor-pointer group ${isChecked ? 'bg-gray-50' : ''}`}>
+                                <div className="flex-1 flex items-center gap-3" onClick={() => toggleCheck(cat, item)}>
+                                  <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${isChecked ? 'bg-orange-500 border-orange-500' : 'border-gray-300 group-hover:border-orange-400'}`}>{isChecked && <Check size={16} className="text-white" />}</div>
+                                  <span className={`text-base flex-1 ${isChecked ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{item}</span>
+                                </div>
+                                <button onClick={() => deleteItem(cat, idx)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"><Trash2 size={18} /></button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="p-3 bg-gray-50 flex gap-2">
+                          <input type="text" value={newItemText[cat] || ''} onChange={(e) => setNewItemText({ ...newItemText, [cat]: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && addItem(cat)} placeholder={`新增項目到 ${cat}...`} className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm" />
+                          <button onClick={() => addItem(cat)} disabled={!newItemText[cat]?.trim()} className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Plus size={20} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+              </div>
+              <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 p-2 text-center text-xs text-gray-500">清單 ID: <strong>{listId}</strong> (請在其他裝置輸入此 ID 以同步)</div>
+            </div>
+          );
+        }
+
+        // 渲染 App
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
