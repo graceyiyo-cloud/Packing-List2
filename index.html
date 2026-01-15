@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>行李清單雲端版</title>
+    <title>行李清單雲端版 (含歷史紀錄)</title>
     
+    <!-- 1. 樣式 (Tailwind) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- 2. React 核心 (使用 UMD 穩定版) -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- 3. Firebase 核心 (使用 Compat 穩定版) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
@@ -20,20 +23,21 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- 內建圖示區 (直接寫在這裡，防止讀取失敗) ---
+        // --- 內建圖示區 ---
         const Icons = {
-            Trash2: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+            Trash2: ({size=18, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
             Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
             RefreshCw: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
-            Check: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+            Check: ({className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>,
             LogIn: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>,
             Baby: () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></svg>,
             ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
             HelpCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>,
-            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            History: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
         };
 
-        // --- 你的 Firebase 設定 ---
+        // --- Firebase 設定 ---
         const firebaseConfig = {
           apiKey: "AIzaSyB34DnVg26SFsKh3yj3r01YKCflCKiOvjo",
           authDomain: "packing-list-app-3730f.firebaseapp.com",
@@ -44,14 +48,15 @@
           measurementId: "G-44WGM8ZX4P"
         };
 
-        // 初始化 Firebase
-        firebase.initializeApp(firebaseConfig);
+        // 初始化
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
         const auth = firebase.auth();
         const db = firebase.firestore();
-        // 固定的 App ID
         const appId = 'my-packing-list-v1';
 
-        // --- React 程式邏輯 ---
+        // --- React App ---
         const { useState, useEffect } = React;
 
         const initialKidsData = {
@@ -78,14 +83,19 @@
           const [isJoined, setIsJoined] = useState(false);
           const [newItemText, setNewItemText] = useState({});
           const [showHelp, setShowHelp] = useState(false);
+          
+          // 新增：儲存的歷史清單列表
+          const [savedLists, setSavedLists] = useState([]);
 
-          // 1. 自動登入
+          // 1. 自動登入 & 讀取歷史紀錄
           useEffect(() => {
-            auth.signInAnonymously().catch((err) => {
-                console.error("登入失敗:", err);
-                alert("登入失敗！請檢查網路，或確認 Firebase Console 的 Authentication 有開啟「匿名登入」");
-            });
+            auth.signInAnonymously().catch((err) => console.error("登入失敗:", err));
             const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
+            
+            // 讀取歷史紀錄
+            const history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
+            setSavedLists(history);
+
             return () => unsubscribe();
           }, []);
 
@@ -94,7 +104,6 @@
             if (!user || !listId) return;
             setLoading(true);
             
-            // 資料庫路徑：artifacts -> {appId} -> public -> data -> {listId} -> main
             const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
 
             const unsubscribe = docRef.onSnapshot((docSnap) => {
@@ -104,7 +113,6 @@
                 if (remoteData.listData) setData(remoteData.listData);
                 if (remoteData.checkedItems) setCheckedItems(remoteData.checkedItems);
               } else {
-                // 如果是新清單，就建立預設資料
                 docRef.set({
                   listData: initialKidsData,
                   checkedItems: [],
@@ -115,34 +123,57 @@
               }
             }, (error) => {
               console.error("同步錯誤:", error);
-              if (error.code === 'permission-denied') {
-                  alert("權限不足！請去 Firebase Console 的 Rules 改成 allow read, write: if true;");
-              }
               setLoading(false);
             });
             return () => unsubscribe();
           }, [user, listId]);
 
-          // --- 按鈕功能 ---
+          // --- 功能函式 ---
+
+          // 更新歷史紀錄到 LocalStorage
+          const updateHistory = (newId) => {
+             let history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
+             // 移除重複，把最新的放到最前面
+             history = history.filter(id => id !== newId);
+             history.unshift(newId);
+             // 只保留最近 5 筆
+             if (history.length > 5) history = history.slice(0, 5);
+             
+             localStorage.setItem('kids_packing_history', JSON.stringify(history));
+             setSavedLists(history);
+          };
+
+          // 刪除單筆歷史紀錄
+          const removeHistory = (e, idToRemove) => {
+              e.stopPropagation(); // 防止觸發點擊進入
+              const newHistory = savedLists.filter(id => id !== idToRemove);
+              localStorage.setItem('kids_packing_history', JSON.stringify(newHistory));
+              setSavedLists(newHistory);
+          };
+
           const handleJoin = (e) => {
             e.preventDefault();
-            if (!enteredId.trim()) return;
-            const cleanId = enteredId.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '');
+            joinList(enteredId);
+          };
+
+          // 抽離出共用的加入邏輯
+          const joinList = (idToJoin) => {
+            if (!idToJoin.trim()) return;
+            const cleanId = idToJoin.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '');
             setListId(cleanId);
             setIsJoined(true);
-            localStorage.setItem('kids_packing_last_id', cleanId);
+            
+            // 更新歷史紀錄
+            updateHistory(cleanId);
           };
 
           const handleLogout = () => {
             setIsJoined(false);
             setListId('');
-            localStorage.removeItem('kids_packing_last_id');
+            // 登出時重新讀取一次歷史紀錄，確保同步
+            const history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
+            setSavedLists(history);
           };
-
-          useEffect(() => {
-            const lastId = localStorage.getItem('kids_packing_last_id');
-            if (lastId) setEnteredId(lastId);
-          }, []);
 
           const toggleCheck = (cat, item) => {
             if (!user || !listId) return;
@@ -194,7 +225,7 @@
             docRef.update({ checkedItems: [] });
           };
 
-          // --- 畫面渲染 ---
+          // --- 登入畫面 (含歷史紀錄) ---
           if (!isJoined) {
             return (
               <div className="min-h-screen bg-[#fffaf0] flex items-center justify-center p-4 font-sans">
@@ -202,13 +233,14 @@
                   <button onClick={() => setShowHelp(true)} className="absolute top-4 right-4 text-orange-400 hover:text-orange-600 transition-colors">
                     <Icons.HelpCircle />
                   </button>
-                  <div className="text-center mb-8">
+                  <div className="text-center mb-6">
                     <div className="inline-block p-4 rounded-full bg-orange-100 mb-4 text-orange-500">
                       <Icons.Baby />
                     </div>
                     <h1 className="text-2xl font-bold text-gray-800 mb-2">行李清單雲端版</h1>
                     <p className="text-gray-500">輸入一個名稱，多人同步管理</p>
                   </div>
+                  
                   <form onSubmit={handleJoin} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">清單 ID / 名稱</label>
@@ -219,7 +251,6 @@
                         placeholder="例如: 王家日本行2024"
                         className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
                       />
-                      <p className="text-xs text-gray-400 mt-2 ml-1">* 在另一台裝置輸入相同的名稱即可同步</p>
                     </div>
                     <button 
                       type="submit"
@@ -230,6 +261,34 @@
                       開始整理行李
                     </button>
                   </form>
+
+                  {/* 歷史紀錄區塊 */}
+                  {savedLists.length > 0 && (
+                    <div className="mt-8 border-t border-gray-100 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <h3 className="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
+                            <Icons.History /> 曾經開啟的清單
+                        </h3>
+                        <div className="space-y-2">
+                            {savedLists.map((id) => (
+                                <div 
+                                    key={id} 
+                                    onClick={() => { setEnteredId(id); joinList(id); }}
+                                    className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-orange-200 hover:bg-orange-50 cursor-pointer transition-all group"
+                                >
+                                    <span className="text-gray-700 font-medium">{id}</span>
+                                    <button 
+                                        onClick={(e) => removeHistory(e, id)}
+                                        className="text-gray-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="刪除紀錄"
+                                    >
+                                        <Icons.Trash2 size={16} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                  )}
+
                   {showHelp && (
                     <div className="absolute inset-0 bg-white/95 z-50 rounded-2xl p-6 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
                        <h3 className="text-xl font-bold text-orange-600 mb-4">如何使用？</h3>
@@ -247,6 +306,7 @@
             );
           }
 
+          // --- 主畫面 (保持不變) ---
           return (
             <div className="min-h-screen bg-[#fffaf0] font-sans pb-20 relative">
               {showHelp && (
@@ -290,7 +350,7 @@
                 {loading ? <LoadingSpinner /> : (
                   <>
                     <div className="flex justify-end">
-                      <button onClick={resetList} className="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 px-4 rounded-full flex items-center gap-2 transition-colors"><Icons.RefreshCw />重設所有勾選</button>
+                      <button onClick={resetList} className="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 px-4 rounded-full flex items-center gap-2 transition-colors"><Icons.RefreshCw />重置所有勾選</button>
                     </div>
                     {Object.keys(data).map((cat) => (
                       <div key={cat} className="bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden">
