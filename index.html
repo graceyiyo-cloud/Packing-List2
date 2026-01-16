@@ -80,7 +80,19 @@
             RefreshCw: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
             Check: ({size=20, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>,
             LogIn: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>,
-            Baby: () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></svg>,
+            // 新增可愛行李箱圖案
+            CuteLuggage: ({size=48, className=""}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                    <rect x="3" y="6" width="18" height="14" rx="2.5" />
+                    <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+                    <path d="M7 20v2" />
+                    <path d="M17 20v2" />
+                    {/* 臉部表情 */}
+                    <circle cx="9" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                    <circle cx="15" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                    <path d="M10 15a2.5 2.5 0 0 0 4 0" />
+                </svg>
+            ),
             ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
             HelpCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>,
             X: ({size=24, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
@@ -147,6 +159,9 @@
           const [editingCategory, setEditingCategory] = useState(null);
           const [editingName, setEditingName] = useState("");
           
+          // 自訂確認視窗 State
+          const [modalConfig, setModalConfig] = useState({ show: false, message: '', onConfirm: null });
+
           const [savedLists, setSavedLists] = useState([]);
 
           // 拖曳相關 Ref
@@ -292,6 +307,22 @@
              docRef.update({ categoryOrder: newOrder });
           };
 
+          // --- 彈窗輔助函式 ---
+          const showConfirm = (message, action) => {
+              setModalConfig({
+                  show: true,
+                  message,
+                  onConfirm: () => {
+                      action();
+                      setModalConfig({ show: false, message: '', onConfirm: null });
+                  }
+              });
+          };
+
+          const closeModal = () => {
+              setModalConfig({ show: false, message: '', onConfirm: null });
+          };
+
 
           // --- 資料操作邏輯 ---
           const toggleCheck = (cat, item) => {
@@ -320,20 +351,23 @@
             setNewItemText(prev => ({ ...prev, [cat]: '' }));
           };
 
-          const deleteItem = (cat, itemIndex) => {
+          // 修正：加入 e.stopPropagation() 並使用自訂彈窗
+          const deleteItem = (e, cat, itemIndex) => {
             if (!user || !listId) return;
-            if (!confirm("確定要撕掉這張貼紙嗎？(刪除項目)")) return;
+            e.stopPropagation(); // 阻止事件冒泡到父層 (toggleCheck)
 
-            const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-            const newData = { ...data };
-            const itemValue = newData[cat][itemIndex];
-            const key = `${cat}-${itemValue}`;
+            showConfirm("確定要撕掉這張貼紙嗎？(刪除項目)", () => {
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
+                const newData = { ...data };
+                const itemValue = newData[cat][itemIndex];
+                const key = `${cat}-${itemValue}`;
 
-            newData[cat].splice(itemIndex, 1);
-            
-            docRef.update({ 
-              listData: newData,
-              checkedItems: firebase.firestore.FieldValue.arrayRemove(key)
+                newData[cat].splice(itemIndex, 1);
+                
+                docRef.update({ 
+                  listData: newData,
+                  checkedItems: firebase.firestore.FieldValue.arrayRemove(key)
+                });
             });
           };
 
@@ -357,33 +391,35 @@
              setNewCategoryName("");
           };
 
+          // 修正：使用自訂彈窗
           const deleteCategory = (catName) => {
               if (!user || !listId) return;
-              if (!confirm(`確定要丟掉整個「${catName}」分類嗎？\n裡面的東西都會不見喔！`)) return;
-
-              const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-              const newData = { ...data };
               
-              const keysToRemove = [];
-              if (newData[catName]) {
-                  newData[catName].forEach(item => {
-                      keysToRemove.push(`${catName}-${item}`);
-                  });
-              }
-              
-              delete newData[catName];
-              const newOrder = categoryOrder.filter(c => c !== catName);
+              showConfirm(`確定要丟掉整個「${catName}」分類嗎？\n裡面的東西都會不見喔！`, () => {
+                  const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
+                  const newData = { ...data };
+                  
+                  const keysToRemove = [];
+                  if (newData[catName]) {
+                      newData[catName].forEach(item => {
+                          keysToRemove.push(`${catName}-${item}`);
+                      });
+                  }
+                  
+                  delete newData[catName];
+                  const newOrder = categoryOrder.filter(c => c !== catName);
 
-              let updateObj = {
-                  listData: newData,
-                  categoryOrder: newOrder
-              };
-              
-              if (keysToRemove.length > 0) {
-                  updateObj.checkedItems = firebase.firestore.FieldValue.arrayRemove(...keysToRemove);
-              }
+                  let updateObj = {
+                      listData: newData,
+                      categoryOrder: newOrder
+                  };
+                  
+                  if (keysToRemove.length > 0) {
+                      updateObj.checkedItems = firebase.firestore.FieldValue.arrayRemove(...keysToRemove);
+                  }
 
-              docRef.update(updateObj);
+                  docRef.update(updateObj);
+              });
           };
 
           // --- 修改類別名稱邏輯 ---
@@ -413,26 +449,20 @@
 
               const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
               
-              // 1. 更新順序表
               const newOrder = categoryOrder.map(n => n === oldName ? newName : n);
-              
-              // 2. 更新 checkedItems (搬移舊勾選紀錄到新名稱)
               const newCheckedItems = checkedItems.map(item => {
                   if (item.startsWith(`${oldName}-`)) {
-                      // 移除舊前綴，加上新前綴
-                      const itemSuffix = item.substring(oldName.length + 1); // +1 是為了 '-'
+                      const itemSuffix = item.substring(oldName.length + 1); 
                       return `${newName}-${itemSuffix}`;
                   }
                   return item;
               });
 
-              // 3. 準備 Firestore 更新物件
-              // 注意：這會刪除舊 key，新增新 key，並將資料搬過去
               const updatePayload = {
                   categoryOrder: newOrder,
                   checkedItems: newCheckedItems,
-                  [`listData.${newName}`]: data[oldName], // 搬移資料
-                  [`listData.${oldName}`]: firebase.firestore.FieldValue.delete() // 刪除舊資料
+                  [`listData.${newName}`]: data[oldName], 
+                  [`listData.${oldName}`]: firebase.firestore.FieldValue.delete() 
               };
 
               try {
@@ -444,11 +474,13 @@
               }
           };
 
+          // 修正：使用自訂彈窗
           const resetList = () => {
             if (!user || !listId) return;
-            if (!confirm("確定要重置所有勾選狀態嗎？")) return;
-            const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-            docRef.update({ checkedItems: [] });
+            showConfirm("確定要重置所有勾選狀態嗎？", () => {
+                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
+                docRef.update({ checkedItems: [] });
+            });
           };
 
           // --- 登入畫面 (可愛復古風) ---
@@ -467,10 +499,9 @@
                   
                   <div className="text-center mb-8">
                     <div className="inline-block p-4 rounded-full bg-orange-100 border-4 border-[#451A03] mb-4 text-[#D97706]">
-                      <Icons.Baby />
+                      <Icons.CuteLuggage />
                     </div>
                     <h1 className="text-3xl font-black text-[#451A03] tracking-wider mb-2">行李清單</h1>
-                    <p className="text-[#92400E] font-medium">輸入代號，一起整理吧！</p>
                   </div>
                   
                   <form onSubmit={handleJoin} className="space-y-6">
@@ -538,6 +569,27 @@
           // --- 主畫面 (可愛復古風) ---
           return (
             <div className="min-h-screen pb-24 relative">
+              
+              {/* 自訂確認彈窗 (Modal) */}
+              {modalConfig.show && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={closeModal}>
+                    <div className="bg-white rounded-[2rem] p-6 max-w-xs w-full border-4 border-[#451A03] retro-shadow relative flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+                         {/* 彈窗裝飾 */}
+                         <div className="absolute -top-5 bg-[#F59E0B] text-[#451A03] p-2 rounded-full border-4 border-[#451A03]">
+                            <Icons.HelpCircle size={32} />
+                         </div>
+
+                        <h3 className="text-xl font-black text-[#451A03] mt-4 mb-2">請確認</h3>
+                        <p className="text-[#92400E] font-bold mb-6 whitespace-pre-line leading-relaxed">{modalConfig.message}</p>
+                        
+                        <div className="flex gap-3 w-full">
+                            <button onClick={closeModal} className="flex-1 py-3 rounded-xl border-4 border-[#451A03] text-[#451A03] font-black hover:bg-gray-100 transition-colors">取消</button>
+                            <button onClick={modalConfig.onConfirm} className="flex-1 py-3 rounded-xl border-4 border-[#451A03] bg-[#F59E0B] text-[#451A03] font-black hover:bg-[#D97706] retro-shadow-sm active:translate-y-1 active:shadow-none transition-all">確定</button>
+                        </div>
+                    </div>
+                </div>
+              )}
+
               {/* 幫助彈窗 */}
               {showHelp && (
                 <div className="fixed inset-0 bg-[#451A03]/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -650,8 +702,6 @@
                                     >
                                         <Icons.Pencil size={18} />
                                     </button>
-
-                                    <span className="text-sm font-bold text-white bg-[#F97316] border-2 border-[#451A03] px-2 py-0.5 rounded-full shadow-[2px_2px_0px_0px_#451A03] flex-shrink-0 ml-auto mr-2">{data[cat].length}</span>
                                 </div>
                             )}
                             
@@ -671,14 +721,14 @@
                             {data[cat].map((item, idx) => {
                               const isChecked = checkedItems.includes(`${cat}-${item}`);
                               return (
-                                <div key={`${cat}-${idx}`} className={`flex items-center p-4 hover:bg-[#FFFBEB] transition-colors cursor-pointer group ${isChecked ? 'bg-gray-100' : ''}`}>
+                                <div key={`${cat}-${idx}`} className={`flex items-center px-4 py-2 hover:bg-[#FFFBEB] transition-colors cursor-pointer group ${isChecked ? 'bg-gray-100' : ''}`}>
                                   <div className="flex-1 flex items-center gap-4" onClick={() => toggleCheck(cat, item)}>
                                     <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${isChecked ? 'bg-[#22C55E] border-[#451A03] shadow-none translate-y-0.5' : 'bg-white border-[#451A03] shadow-[3px_3px_0px_0px_#D1D5DB] group-hover:shadow-[3px_3px_0px_0px_#F59E0B]'}`}>
                                       {isChecked && <Icons.Check className="text-white drop-shadow-md" />}
                                     </div>
                                     <span className={`text-lg font-bold flex-1 transition-all ${isChecked ? 'text-gray-400 line-through decoration-4 decoration-gray-300' : 'text-[#451A03]'}`}>{item}</span>
                                   </div>
-                                  <button onClick={() => deleteItem(cat, idx)} className="p-2 text-gray-300 hover:text-red-500 rounded-full transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100">
+                                  <button onClick={(e) => deleteItem(e, cat, idx)} className="p-2 text-gray-300 hover:text-red-500 rounded-full transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100">
                                       <Icons.Trash2 />
                                   </button>
                                 </div>
