@@ -3,38 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>行李清單雲端版 (含歷史紀錄)</title>
+    <title>行李清單雲端版 (可愛復古風)</title>
     
     <!-- 1. 樣式 (Tailwind) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. React 核心 (使用 UMD 穩定版) -->
+    <!-- 2. React 核心 -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 3. Firebase 核心 (使用 Compat 穩定版) -->
+    <!-- 3. Firebase 核心 -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+
+    <!-- 4. Google Fonts (可愛圓體) -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: #FEF3C7; /* 奶油黃 */
+            color: #451A03; /* 深褐 */
+            background-image: radial-gradient(#D97706 1px, transparent 1px);
+            background-size: 20px 20px; /* 點點背景 */
+        }
+        
+        /* 復古硬陰影效果 */
+        .retro-shadow {
+            box-shadow: 4px 4px 0px 0px #451A03;
+        }
+        .retro-shadow-sm {
+            box-shadow: 2px 2px 0px 0px #451A03;
+        }
+        .retro-shadow-hover:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px 0px #451A03;
+        }
+        .retro-shadow-active:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px 0px #451A03;
+        }
+        
+        /* 隱藏滾動條但保持功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
 </head>
-<body class="bg-[#fffaf0]">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- 內建圖示區 ---
+        // --- 內建圖示區 (Lucide Icons) ---
         const Icons = {
-            Trash2: ({size=18, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
-            Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-            RefreshCw: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
-            Check: ({className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>,
-            LogIn: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>,
+            Trash2: ({size=18, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+            Plus: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
+            RefreshCw: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
+            Check: ({className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>,
+            LogIn: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>,
             Baby: () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></svg>,
-            ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
-            HelpCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>,
-            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
-            History: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+            ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
+            HelpCircle: () => <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>,
+            X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+            History: () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>,
+            Star: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
         };
 
         // --- Firebase 設定 ---
@@ -48,7 +87,6 @@
           measurementId: "G-44WGM8ZX4P"
         };
 
-        // 初始化
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -67,12 +105,13 @@
           "備註": []
         };
         
-        // 定義分類順序，防止資料庫同步時造成順序跳動
         const CATEGORY_ORDER = ["醫藥與防護", "電子產品", "小孩衣物用品", "大人個人用品", "備註"];
 
+        // 復古風 Loading
         const LoadingSpinner = () => (
-          <div className="flex justify-center items-center h-40">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-500"></div>
+          <div className="flex flex-col justify-center items-center h-40 gap-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#451A03] border-t-transparent"></div>
+            <p className="font-bold text-[#451A03]">資料搬運中...</p>
           </div>
         );
 
@@ -87,22 +126,16 @@
           const [newItemText, setNewItemText] = useState({});
           const [showHelp, setShowHelp] = useState(false);
           
-          // 新增：儲存的歷史清單列表
           const [savedLists, setSavedLists] = useState([]);
 
-          // 1. 自動登入 & 讀取歷史紀錄
           useEffect(() => {
             auth.signInAnonymously().catch((err) => console.error("登入失敗:", err));
             const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
-            
-            // 讀取歷史紀錄
             const history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
             setSavedLists(history);
-
             return () => unsubscribe();
           }, []);
 
-          // 2. 資料同步
           useEffect(() => {
             if (!user || !listId) return;
             setLoading(true);
@@ -131,24 +164,17 @@
             return () => unsubscribe();
           }, [user, listId]);
 
-          // --- 功能函式 ---
-
-          // 更新歷史紀錄到 LocalStorage
           const updateHistory = (newId) => {
              let history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
-             // 移除重複，把最新的放到最前面
              history = history.filter(id => id !== newId);
              history.unshift(newId);
-             // 只保留最近 5 筆
              if (history.length > 5) history = history.slice(0, 5);
-             
              localStorage.setItem('kids_packing_history', JSON.stringify(history));
              setSavedLists(history);
           };
 
-          // 刪除單筆歷史紀錄
           const removeHistory = (e, idToRemove) => {
-              e.stopPropagation(); // 防止觸發點擊進入
+              e.stopPropagation();
               const newHistory = savedLists.filter(id => id !== idToRemove);
               localStorage.setItem('kids_packing_history', JSON.stringify(newHistory));
               setSavedLists(newHistory);
@@ -159,21 +185,17 @@
             joinList(enteredId);
           };
 
-          // 抽離出共用的加入邏輯
           const joinList = (idToJoin) => {
             if (!idToJoin.trim()) return;
             const cleanId = idToJoin.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '');
             setListId(cleanId);
             setIsJoined(true);
-            
-            // 更新歷史紀錄
             updateHistory(cleanId);
           };
 
           const handleLogout = () => {
             setIsJoined(false);
             setListId('');
-            // 登出時重新讀取一次歷史紀錄，確保同步
             const history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
             setSavedLists(history);
           };
@@ -206,7 +228,7 @@
 
           const deleteItem = (cat, itemIndex) => {
             if (!user || !listId) return;
-            if (!confirm("確定要刪除這個項目嗎？")) return;
+            if (!confirm("確定要撕掉這張貼紙嗎？(刪除項目)")) return;
 
             const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
             const newData = { ...data };
@@ -223,68 +245,72 @@
 
           const resetList = () => {
             if (!user || !listId) return;
-            if (!confirm("確定要清除所有勾選狀態嗎？(項目會保留)")) return;
+            if (!confirm("確定要重置所有勾選狀態嗎？")) return;
             const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
             docRef.update({ checkedItems: [] });
           };
 
-          // --- 登入畫面 (含歷史紀錄) ---
+          // --- 登入畫面 (可愛復古風) ---
           if (!isJoined) {
             return (
-              <div className="min-h-screen bg-[#fffaf0] flex items-center justify-center p-4 font-sans">
-                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-orange-100 relative">
-                  <button onClick={() => setShowHelp(true)} className="absolute top-4 right-4 text-orange-400 hover:text-orange-600 transition-colors">
+              <div className="min-h-screen flex items-center justify-center p-4">
+                <div className="bg-white border-4 border-[#451A03] p-8 rounded-[2rem] max-w-md w-full relative retro-shadow">
+                  {/* 裝飾性貼紙 */}
+                  <div className="absolute -top-6 -left-6 bg-yellow-300 rounded-full p-4 border-4 border-[#451A03] hidden sm:block">
+                     <Icons.Star />
+                  </div>
+
+                  <button onClick={() => setShowHelp(true)} className="absolute top-4 right-4 text-[#D97706] hover:text-[#B45309] transition-transform hover:scale-110">
                     <Icons.HelpCircle />
                   </button>
-                  <div className="text-center mb-6">
-                    <div className="inline-block p-4 rounded-full bg-orange-100 mb-4 text-orange-500">
+                  
+                  <div className="text-center mb-8">
+                    <div className="inline-block p-4 rounded-full bg-orange-100 border-4 border-[#451A03] mb-4 text-[#D97706]">
                       <Icons.Baby />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-800 mb-2">行李清單雲端版</h1>
-                    <p className="text-gray-500">輸入一個名稱，多人同步管理</p>
+                    <h1 className="text-3xl font-black text-[#451A03] tracking-wider mb-2">行李清單</h1>
+                    <p className="text-[#92400E] font-medium">輸入代號，一起整理吧！</p>
                   </div>
                   
-                  <form onSubmit={handleJoin} className="space-y-4">
+                  <form onSubmit={handleJoin} className="space-y-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">清單 ID / 名稱</label>
+                      <label className="block text-lg font-bold text-[#451A03] mb-2">清單 ID / 名稱</label>
                       <input 
                         type="text" 
                         value={enteredId}
                         onChange={(e) => setEnteredId(e.target.value)}
                         placeholder="例如: 王家日本行2024"
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+                        className="w-full px-4 py-3 rounded-xl border-4 border-[#451A03] bg-[#FEF3C7] focus:outline-none focus:ring-4 focus:ring-yellow-300 transition-all font-bold text-[#451A03] placeholder-orange-300/70"
                       />
                     </div>
                     <button 
                       type="submit"
                       disabled={!enteredId.trim()}
-                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full bg-[#F59E0B] hover:bg-[#D97706] text-[#451A03] font-black py-4 rounded-xl border-4 border-[#451A03] flex items-center justify-center gap-3 transition-all retro-shadow-active retro-shadow disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-1"
                     >
                       <Icons.LogIn />
-                      開始整理行李
+                      出發整理！
                     </button>
                   </form>
 
-                  {/* 歷史紀錄區塊 */}
                   {savedLists.length > 0 && (
-                    <div className="mt-8 border-t border-gray-100 pt-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <h3 className="text-sm font-bold text-gray-400 mb-3 flex items-center gap-2">
-                            <Icons.History /> 曾經開啟的清單
+                    <div className="mt-8 border-t-4 border-dashed border-[#451A03]/20 pt-6">
+                        <h3 className="text-sm font-bold text-[#92400E] mb-3 flex items-center gap-2">
+                            <Icons.History /> 歷史紀錄小卡
                         </h3>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {savedLists.map((id) => (
                                 <div 
                                     key={id} 
                                     onClick={() => { setEnteredId(id); joinList(id); }}
-                                    className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:border-orange-200 hover:bg-orange-50 cursor-pointer transition-all group"
+                                    className="flex items-center justify-between p-3 rounded-xl border-2 border-[#451A03] bg-white hover:bg-yellow-50 cursor-pointer transition-all group retro-shadow-sm hover:translate-x-1"
                                 >
-                                    <span className="text-gray-700 font-medium">{id}</span>
+                                    <span className="text-[#451A03] font-bold">{id}</span>
                                     <button 
                                         onClick={(e) => removeHistory(e, id)}
-                                        className="text-gray-300 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        title="刪除紀錄"
+                                        className="text-[#D97706] hover:text-red-500 p-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
-                                        <Icons.Trash2 size={16} />
+                                        <Icons.Trash2 size={20} />
                                     </button>
                                 </div>
                             ))}
@@ -293,15 +319,14 @@
                   )}
 
                   {showHelp && (
-                    <div className="absolute inset-0 bg-white/95 z-50 rounded-2xl p-6 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
-                       <h3 className="text-xl font-bold text-orange-600 mb-4">如何使用？</h3>
-                       <ol className="text-left text-sm text-gray-700 space-y-3 mb-6 list-decimal pl-4">
-                         <li>在下方欄位設定一個<b>好記的名字</b>（例：日本行）。</li>
-                         <li>請家人在他們的手機開啟網頁。</li>
-                         <li>輸入<b>一模一樣的名字</b>。</li>
-                         <li>成功！現在你們看到的畫面是同步的。</li>
+                    <div className="absolute inset-0 bg-white/95 z-50 rounded-[1.8rem] p-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-200">
+                       <h3 className="text-2xl font-black text-[#D97706] mb-4">使用小撇步</h3>
+                       <ol className="text-left text-[#451A03] font-bold space-y-4 mb-8 list-decimal pl-6 text-lg">
+                         <li>取個好記的名字<br/><span className="text-sm font-normal text-[#92400E]">（例：日本行）</span></li>
+                         <li>請家人輸入一樣的名字</li>
+                         <li>開始同步整理！</li>
                        </ol>
-                       <button onClick={() => setShowHelp(false)} className="bg-gray-800 text-white px-6 py-2 rounded-full text-sm font-bold">我知道了</button>
+                       <button onClick={() => setShowHelp(false)} className="bg-[#451A03] text-[#FEF3C7] px-8 py-3 rounded-full font-bold border-2 border-[#451A03] hover:scale-105 transition-transform">我知道了</button>
                     </div>
                   )}
                 </div>
@@ -309,34 +334,41 @@
             );
           }
 
-          // --- 主畫面 (保持不變) ---
+          // --- 主畫面 (可愛復古風) ---
           return (
-            <div className="min-h-screen bg-[#fffaf0] font-sans pb-20 relative">
+            <div className="min-h-screen pb-24 relative">
+              {/* 幫助彈窗 */}
               {showHelp && (
-                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                  <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
-                    <button onClick={() => setShowHelp(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><Icons.X /></button>
-                    <h3 className="text-xl font-bold text-orange-600 mb-4 flex items-center gap-2"><Icons.HelpCircle />操作教學</h3>
-                    <ul className="text-left text-gray-700 space-y-4 mb-6">
-                      <li className="flex gap-3"><div className="bg-orange-100 p-2 rounded-full h-8 w-8 flex items-center justify-center text-orange-600 font-bold text-xs flex-shrink-0">1</div><div><b>邀請家人：</b>告訴他們現在這個清單 ID (<b>{listId}</b>)，輸入一樣的 ID 就能加入。</div></li>
-                      <li className="flex gap-3"><div className="bg-orange-100 p-2 rounded-full h-8 w-8 flex items-center justify-center text-orange-600 font-bold text-xs flex-shrink-0">2</div><div><b>即時同步：</b>有人勾選或新增物品，所有人的畫面都會自動更新。</div></li>
-                      <li className="flex gap-3"><div className="bg-orange-100 p-2 rounded-full h-8 w-8 flex items-center justify-center text-orange-600 font-bold text-xs flex-shrink-0">3</div><div><b>新增物品：</b>在每個分類下方輸入文字，按下「+」按鈕。</div></li>
+                <div className="fixed inset-0 bg-[#451A03]/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                  <div className="bg-white border-4 border-[#451A03] rounded-[2rem] p-6 max-w-sm w-full relative retro-shadow">
+                    <button onClick={() => setShowHelp(false)} className="absolute top-4 right-4 text-[#9CA3AF] hover:text-[#451A03]"><Icons.X /></button>
+                    <h3 className="text-xl font-black text-[#D97706] mb-4 flex items-center gap-2"><Icons.HelpCircle /> 操作教學</h3>
+                    <ul className="text-left text-[#451A03] space-y-4 mb-6 font-medium">
+                      <li className="flex gap-3"><div className="bg-yellow-200 border-2 border-[#451A03] p-2 rounded-full h-8 w-8 flex items-center justify-center text-[#451A03] font-black text-sm flex-shrink-0">1</div><div><b>邀請家人：</b>告訴他們 ID (<b>{listId}</b>)。</div></li>
+                      <li className="flex gap-3"><div className="bg-yellow-200 border-2 border-[#451A03] p-2 rounded-full h-8 w-8 flex items-center justify-center text-[#451A03] font-black text-sm flex-shrink-0">2</div><div><b>即時同步：</b>大家看到的畫面都是一樣的。</div></li>
+                      <li className="flex gap-3"><div className="bg-yellow-200 border-2 border-[#451A03] p-2 rounded-full h-8 w-8 flex items-center justify-center text-[#451A03] font-black text-sm flex-shrink-0">3</div><div><b>加東西：</b>輸入文字後按「+」。</div></li>
                     </ul>
-                    <button onClick={() => setShowHelp(false)} className="w-full bg-orange-500 text-white py-3 rounded-lg font-bold hover:bg-orange-600">開始使用</button>
+                    <button onClick={() => setShowHelp(false)} className="w-full bg-[#F59E0B] border-4 border-[#451A03] text-[#451A03] py-3 rounded-xl font-black retro-shadow active:shadow-none active:translate-y-1 transition-all">OK!</button>
                   </div>
                 </div>
               )}
-              <div className="bg-white shadow-sm sticky top-0 z-10 border-b border-orange-100">
-                <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+
+              {/* 頂部導航 */}
+              <div className="bg-white border-b-4 border-[#451A03] sticky top-0 z-10 shadow-sm">
+                <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <button onClick={handleLogout} className="text-gray-400 hover:text-gray-600"><Icons.ArrowLeft /></button>
-                    <h1 className="text-lg font-bold text-orange-600 truncate max-w-[150px] sm:max-w-xs">{listId}</h1>
+                    <button onClick={handleLogout} className="bg-orange-100 hover:bg-orange-200 text-[#451A03] p-2 rounded-xl border-2 border-[#451A03] transition-colors"><Icons.ArrowLeft /></button>
+                    <h1 className="text-xl font-black text-[#451A03] truncate max-w-[150px] sm:max-w-xs">{listId}</h1>
                   </div>
                   <div className="flex items-center gap-3">
-                     <button onClick={() => setShowHelp(true)} className="text-orange-400 hover:text-orange-600"><Icons.HelpCircle /></button>
-                     <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>同步中</div>
+                      <button onClick={() => setShowHelp(true)} className="text-[#F59E0B] hover:text-[#D97706] transition-transform hover:scale-110"><Icons.HelpCircle /></button>
+                      <div className="text-xs bg-[#DCFCE7] border-2 border-[#451A03] text-[#14532D] px-3 py-1 rounded-full flex items-center gap-2 font-bold shadow-[2px_2px_0px_0px_#451A03]">
+                        <div className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></div>同步中
+                      </div>
                   </div>
                 </div>
+                
+                {/* 進度條 */}
                 {(() => {
                   let total = 0;
                   let currentCheckedCount = 0;
@@ -345,50 +377,87 @@
                     data[cat].forEach(item => { if (checkedItems.includes(`${cat}-${item}`)) currentCheckedCount++; });
                   });
                   const percent = total === 0 ? 0 : Math.round((currentCheckedCount / total) * 100);
-                  return (<div className="h-1.5 w-full bg-orange-100"><div className="h-full bg-orange-500 transition-all duration-500 ease-out" style={{ width: `${percent}%` }}></div></div>);
+                  return (
+                    <div className="h-4 w-full bg-[#FEF3C7] border-t-2 border-[#451A03] relative">
+                        <div className="h-full bg-[#F59E0B] transition-all duration-500 ease-out border-r-2 border-[#451A03]" style={{ width: `${percent}%` }}></div>
+                        <span className="absolute right-2 top-0 text-[10px] font-bold text-[#451A03] leading-4">{percent}%</span>
+                    </div>
+                  );
                 })()}
               </div>
 
-              <div className="max-w-2xl mx-auto p-4 space-y-6">
+              {/* 主要內容區 */}
+              <div className="max-w-3xl mx-auto p-4 space-y-8 mt-4">
                 {loading ? <LoadingSpinner /> : (
                   <>
                     <div className="flex justify-end">
-                      <button onClick={resetList} className="text-sm bg-orange-100 hover:bg-orange-200 text-orange-700 py-2 px-4 rounded-full flex items-center gap-2 transition-colors"><Icons.RefreshCw />重置所有勾選</button>
+                      <button onClick={resetList} className="text-sm bg-white hover:bg-gray-100 text-[#451A03] py-2 px-4 rounded-xl border-2 border-[#451A03] flex items-center gap-2 transition-all retro-shadow-sm active:translate-y-0.5 active:shadow-none font-bold">
+                        <Icons.RefreshCw /> 重置勾選
+                      </button>
                     </div>
+                    
                     {Object.keys(data).sort((a, b) => {
                         const idxA = CATEGORY_ORDER.indexOf(a);
                         const idxB = CATEGORY_ORDER.indexOf(b);
-                        // 如果有不在清單內的分類，排到最後
                         return (idxA === -1 ? 999 : idxA) - (idxB === -1 ? 999 : idxB);
                     }).map((cat) => (
-                      <div key={cat} className="bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden">
-                        <div className="bg-orange-50 px-4 py-3 border-b border-orange-100">
-                          <h2 className="font-bold text-orange-800 text-lg flex items-center gap-2">{cat}<span className="text-sm font-normal text-orange-400 bg-white px-2 py-0.5 rounded-full">{data[cat].length}</span></h2>
+                      <div key={cat} className="bg-white rounded-2xl border-4 border-[#451A03] overflow-hidden retro-shadow relative">
+                        {/* 分類標題 */}
+                        <div className="bg-[#FFEDD5] px-5 py-4 border-b-4 border-[#451A03] flex items-center justify-between">
+                          <h2 className="font-black text-[#9A3412] text-xl flex items-center gap-3">
+                            {cat}
+                          </h2>
+                          <span className="text-sm font-bold text-white bg-[#F97316] border-2 border-[#451A03] px-3 py-1 rounded-full shadow-[2px_2px_0px_0px_#451A03]">{data[cat].length}</span>
                         </div>
-                        <div className="divide-y divide-gray-100">
+                        
+                        {/* 項目列表 */}
+                        <div className="divide-y-2 divide-[#451A03]/10">
                           {data[cat].map((item, idx) => {
                             const isChecked = checkedItems.includes(`${cat}-${item}`);
                             return (
-                              <div key={`${cat}-${idx}`} className={`flex items-center p-4 hover:bg-gray-50 transition-colors cursor-pointer group ${isChecked ? 'bg-gray-50' : ''}`}>
-                                <div className="flex-1 flex items-center gap-3" onClick={() => toggleCheck(cat, item)}>
-                                  <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${isChecked ? 'bg-orange-500 border-orange-500' : 'border-gray-300 group-hover:border-orange-400'}`}>{isChecked && <Icons.Check className="text-white" />}</div>
-                                  <span className={`text-base flex-1 ${isChecked ? 'text-gray-400 line-through' : 'text-gray-700'}`}>{item}</span>
+                              <div key={`${cat}-${idx}`} className={`flex items-center p-4 hover:bg-[#FFFBEB] transition-colors cursor-pointer group ${isChecked ? 'bg-gray-100' : ''}`}>
+                                <div className="flex-1 flex items-center gap-4" onClick={() => toggleCheck(cat, item)}>
+                                  <div className={`w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${isChecked ? 'bg-[#22C55E] border-[#451A03] shadow-none translate-y-0.5' : 'bg-white border-[#451A03] shadow-[3px_3px_0px_0px_#D1D5DB] group-hover:shadow-[3px_3px_0px_0px_#F59E0B]'}`}>
+                                    {isChecked && <Icons.Check className="text-white drop-shadow-md" />}
+                                  </div>
+                                  <span className={`text-lg font-bold flex-1 transition-all ${isChecked ? 'text-gray-400 line-through decoration-4 decoration-gray-300' : 'text-[#451A03]'}`}>{item}</span>
                                 </div>
-                                <button onClick={() => deleteItem(cat, idx)} className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"><Icons.Trash2 /></button>
+                                <button onClick={() => deleteItem(cat, idx)} className="p-2 text-gray-300 hover:text-red-500 rounded-full transition-colors opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100">
+                                    <Icons.Trash2 />
+                                </button>
                               </div>
                             );
                           })}
                         </div>
-                        <div className="p-3 bg-gray-50 flex gap-2">
-                          <input type="text" value={newItemText[cat] || ''} onChange={(e) => setNewItemText({ ...newItemText, [cat]: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && addItem(cat)} placeholder={`新增項目到 ${cat}...`} className="flex-1 px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm" />
-                          <button onClick={() => addItem(cat)} disabled={!newItemText[cat]?.trim()} className="bg-orange-500 hover:bg-orange-600 text-white p-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Plus /></button>
+                        
+                        {/* 新增輸入框 */}
+                        <div className="p-4 bg-[#FEF3C7] border-t-4 border-[#451A03] flex gap-3">
+                          <input 
+                            type="text" 
+                            value={newItemText[cat] || ''} 
+                            onChange={(e) => setNewItemText({ ...newItemText, [cat]: e.target.value })} 
+                            onKeyDown={(e) => e.key === 'Enter' && addItem(cat)} 
+                            placeholder={`新增到 ${cat}...`} 
+                            className="flex-1 px-4 py-3 rounded-xl border-2 border-[#451A03] focus:outline-none focus:ring-4 focus:ring-orange-200 bg-white font-bold text-[#451A03] placeholder-gray-400" 
+                          />
+                          <button 
+                            onClick={() => addItem(cat)} 
+                            disabled={!newItemText[cat]?.trim()} 
+                            className="bg-[#F59E0B] hover:bg-[#D97706] text-[#451A03] p-3 rounded-xl border-2 border-[#451A03] retro-shadow-sm active:translate-y-1 active:shadow-none disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed transition-all"
+                          >
+                            <Icons.Plus />
+                          </button>
                         </div>
                       </div>
                     ))}
                   </>
                 )}
               </div>
-              <div className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-sm border-t border-gray-200 p-2 text-center text-xs text-gray-500">清單 ID: <strong>{listId}</strong> (請在其他裝置輸入此 ID 以同步)</div>
+              
+              {/* 底部 ID 提示 */}
+              <div className="fixed bottom-0 left-0 right-0 bg-[#FFFBEB] border-t-4 border-[#451A03] p-3 text-center text-sm font-bold text-[#92400E]">
+                清單 ID: <span className="bg-[#FEF3C7] px-2 py-0.5 border border-[#451A03] rounded ml-1 select-all">{listId}</span> (分享此 ID 同步)
+              </div>
             </div>
           );
         }
