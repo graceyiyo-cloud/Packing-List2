@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>行李清單 (Organic Compact - Visible Delete)</title>
+    <title>行李清單</title>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Packing List">
+    <meta name="apple-mobile-web-app-title" content="行李清單">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#FDFCF8">
 
     <link rel="apple-touch-icon" href="./icon.png">
     
-    <link rel="manifest" href='data:application/manifest+json,{"name":"Packing List","short_name":"Packing","start_url":".","display":"standalone","background_color":"#FDFCF8","theme_color":"#5D7052","icons":[{"src":"./icon.png","sizes":"512x512","type":"image/png"}]}'>
+    <link rel="manifest" href='data:application/manifest+json,{"name":"行李清單","short_name":"行李清單","start_url":".","display":"standalone","background_color":"#FDFCF8","theme_color":"#5D7052","icons":[{"src":"./icon.png","sizes":"512x512","type":"image/png"}]}'>
 
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -447,7 +447,7 @@
                   <button onClick={() => setShowHelp(true)} className="absolute top-5 right-5 text-grass hover:text-clay transition-colors hover:rotate-12 transform duration-300"><Icons.HelpCircle /></button>
                   <div className="text-center mb-10">
                     <div className="inline-block p-5 rounded-[2rem] bg-moss/10 mb-4 text-moss"><Icons.OrganicBag /></div>
-                    <h1 className="text-4xl font-bold text-ink mb-2 tracking-tight">Packing List</h1>
+                    <h1 className="text-4xl font-bold text-ink mb-2 tracking-tight">行李清單</h1>
                     <p className="text-grass font-medium">Ready for your next journey?</p>
                   </div>
                   <form onSubmit={handleJoin} className="space-y-6">
@@ -516,11 +516,11 @@
                   </div>
                 </div>
               )}
-              <div className="sticky top-4 z-30 px-4 mb-6">
+              <div className="sticky top-4 z-30 px-2 mb-6">
                   <div className="max-w-3xl mx-auto bg-white/70 backdrop-blur-md border border-white/50 rounded-full shadow-soft px-4 py-2.5 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <button onClick={handleLogout} className="bg-stone/50 hover:bg-stone text-ink p-2 rounded-full transition-colors"><Icons.ArrowLeft size={18}/></button>
-                        <h1 className="text-lg font-bold text-ink truncate max-w-[150px] sm:max-w-xs leading-tight">{listId}</h1>
+                        <h1 className="text-base font-bold text-ink truncate leading-tight">行李清單</h1>
                       </div>
                       <div className="flex items-center gap-3">
                            {(() => {
@@ -543,7 +543,7 @@
                       </div>
                   </div>
               </div>
-              <div className="max-w-3xl mx-auto px-4 space-y-6">
+              <div className="max-w-3xl mx-auto px-2 space-y-6">
                 {loading ? <LoadingSpinner /> : (
                   <>
                     <div className="flex justify-end px-2">
