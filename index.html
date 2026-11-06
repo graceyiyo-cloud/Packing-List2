@@ -2,9 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>行李清單</title>
-    
+
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="行李清單">
@@ -12,11 +12,11 @@
     <meta name="theme-color" content="#FDFCF8">
 
     <link rel="apple-touch-icon" href="./icon.png">
-    
+
     <link rel="manifest" href='data:application/manifest+json,{"name":"行李清單","short_name":"行李清單","start_url":".","display":"standalone","background_color":"#FDFCF8","theme_color":"#5D7052","icons":[{"src":"./icon.png","sizes":"512x512","type":"image/png"}]}'>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;400;600;700&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -29,9 +29,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/index.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mobile-drag-drop@2.3.0-rc.2/default.css">
 
     <script>
         tailwind.config = {
@@ -55,7 +52,6 @@
                     boxShadow: {
                         'soft': '0 4px 20px -2px rgba(93, 112, 82, 0.15)',
                         'float': '0 10px 40px -10px rgba(193, 140, 93, 0.2)',
-                        'inner-light': 'inset 0 2px 4px 0 rgba(255, 255, 255, 0.3)',
                     }
                 }
             }
@@ -64,83 +60,60 @@
 
     <style>
         body {
-            font-family: 'Quicksand', sans-serif;
+            font-family: 'Quicksand', "PingFang TC", "Noto Sans TC", sans-serif;
             background-color: #FDFCF8;
             color: #2C2C24;
             overflow-x: hidden;
-            line-height: 1.35; 
+            line-height: 1.35;
+            -webkit-tap-highlight-color: transparent;
         }
-
         body::before {
             content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed; inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.4'/%3E%3C/svg%3E");
-            opacity: 0.04;
-            pointer-events: none;
-            z-index: 50;
-            mix-blend-mode: multiply;
+            opacity: 0.04; pointer-events: none; z-index: 50; mix-blend-mode: multiply;
         }
-
-        .blob-bg {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: -1;
-            opacity: 0.6;
-        }
-        
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        .dragging {
-            opacity: 0.8;
-            transform: scale(0.98) rotate(1deg);
-            box-shadow: 0 20px 40px -10px rgba(93,112,82,0.2);
-            z-index: 40;
-        }
-        .drag-over {
-            border: 2px dashed #C18C5D !important;
-            background-color: rgba(193, 140, 93, 0.05) !important;
-        }
-
-        .organic-checkbox {
-            border-radius: 40% 60% 60% 40% / 40% 50% 50% 60%;
-        }
-
-        h1, h2, h3 {
-            font-family: 'Fraunces', serif;
-        }
+        .blob-bg { position: fixed; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.6; }
+        .organic-checkbox { border-radius: 40% 60% 60% 40% / 40% 50% 50% 60%; }
+        h1, h2, h3 { font-family: 'Fraunces', "PingFang TC", "Noto Sans TC", serif; }
+        .drag-handle { touch-action: none; cursor: grab; }
+        .sortable-row { transition: transform .18s ease; }
+        .sortable-row.is-dragging { transition: none; z-index: 30; position: relative; box-shadow: 0 16px 32px -12px rgba(93,112,82,.35); background: #FEFEFA; border-radius: 1rem; }
+        .sheet-enter { animation: sheetIn .22s ease-out; }
+        @keyframes sheetIn { from { transform: translateY(24px); opacity: 0 } to { transform: none; opacity: 1 } }
+        .toast-enter { animation: toastIn .2s ease-out; }
+        @keyframes toastIn { from { transform: translate(-50%, 12px); opacity: 0 } to { transform: translate(-50%, 0); opacity: 1 } }
+        button:focus-visible, input:focus-visible { outline: 3px solid rgba(93,112,82,.35); outline-offset: 2px; }
+        .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
+        // Lucide outline icons.
+        const svg = (paths, { size = 20, className = "", stroke = 2 } = {}) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">{paths}</svg>
+        );
         const Icons = {
-            Trash2: ({size=18, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
-            Plus: ({size=24, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>,
-            RefreshCw: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>,
-            Check: ({size=18, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 6 9 17 4 12"/></svg>,
-            LogIn: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>,
-            OrganicBag: ({size=48, className=""}) => (
-                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-                    <path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z" />
-                    <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
-                    <path d="M8 22v-6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v6" />
-                    <path d="M9 10h6" />
-                </svg>
-            ),
-            ArrowLeft: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
-            HelpCircle: ({size=24}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>,
-            X: ({size=20, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
-            History: () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>,
-            Leaf: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-moss/60"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>,
-            GripVertical: ({className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>,
-            Pencil: ({size=16, className=""}) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            Trash: (p) => svg(<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></>, p),
+            Plus: (p) => svg(<><path d="M5 12h14"/><path d="M12 5v14"/></>, { stroke: 2.5, ...p }),
+            Check: (p) => svg(<path d="M20 6 9 17 4 12"/>, { stroke: 3, ...p }),
+            ArrowLeft: (p) => svg(<><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></>, p),
+            X: (p) => svg(<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>, p),
+            Grip: (p) => svg(<><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></>, p),
+            Pencil: (p) => svg(<><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></>, p),
+            Share: (p) => svg(<><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="m16 6-4-4-4 4"/><path d="M12 2v13"/></>, p),
+            ChevronDown: (p) => svg(<path d="m6 9 6 6 6-6"/>, p),
+            ChevronRight: (p) => svg(<path d="m9 18 6-6-6-6"/>, p),
+            FolderInput: (p) => svg(<><path d="M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2"/><path d="m8 16 3-3-3-3"/><path d="M2 13h9"/></>, p),
+            RotateCcw: (p) => svg(<><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></>, p),
+            Eye: (p) => svg(<><path d="M2.06 12.35a1 1 0 0 1 0-.7 10.75 10.75 0 0 1 19.88 0 1 1 0 0 1 0 .7 10.75 10.75 0 0 1-19.88 0"/><circle cx="12" cy="12" r="3"/></>, p),
+            EyeOff: (p) => svg(<><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.53 13.53 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><path d="m2 2 20 20"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/></>, p),
+            ListOrdered: (p) => svg(<><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></>, p),
+            Bag: (p) => svg(<><path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M8 22v-6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v6"/><path d="M9 10h6"/></>, { stroke: 1.5, ...p }),
+            Copy: (p) => svg(<><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>, p),
+            Sparkles: (p) => svg(<><path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.13-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.13a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.13 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.13a.5.5 0 0 1-.96 0Z"/></>, p),
         };
 
         const firebaseConfig = {
@@ -152,15 +125,15 @@
           appId: "1:29252379952:web:0f482df90af76c227ed4f5",
           measurementId: "G-44WGM8ZX4P"
         };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const appId = 'my-packing-list-v1';
+        // Same Firestore location as before, so every existing list keeps working.
+        const listRef = (id) => db.collection('artifacts').doc(appId).collection('public').doc('data').collection(id).doc('main');
+        const keyOf = (cat, item) => `${cat}-${item}`;
 
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
         const initialKidsData = {
           "醫藥與防護": ["備用藥品(擦的、退燒、咳嗽藥水)", "耳溫槍", "電蚊香", "兒童防曬乳", "長棉花棒", "衛生棉，棉條", "濕紙巾", "保潔墊"],
@@ -169,449 +142,545 @@
           "大人個人用品": ["大人換洗衣物", "化妝品、保養品", "洗髮精、沐浴乳", "鏡子"],
           "備註": []
         };
-        
         const DEFAULT_CATEGORY_ORDER = ["醫藥與防護", "電子產品", "小孩衣物用品", "大人個人用品", "備註"];
+        const cleanId = (s) => s.trim().replace(/[^a-zA-Z0-9一-龥-_]/g, '');
+        const fullOrder = (data, order) => {
+            const keys = Object.keys(data || {});
+            const result = (order && order.length ? order : DEFAULT_CATEGORY_ORDER).filter(k => keys.includes(k));
+            keys.forEach(k => { if (!result.includes(k)) result.push(k); });
+            return result;
+        };
+        const countOf = (data, checked) => {
+            let total = 0, done = 0;
+            Object.keys(data || {}).forEach(cat => (data[cat] || []).forEach(item => { total++; if (checked.includes(keyOf(cat, item))) done++; }));
+            return { total, done };
+        };
 
-        const LoadingSpinner = () => (
-          <div className="flex flex-col justify-center items-center h-40 gap-4">
-            <div className="w-12 h-12 rounded-full border-4 border-stone border-t-moss animate-spin"></div>
-            <p className="text-moss font-serif tracking-widest text-sm">Gathering Items...</p>
-          </div>
-        );
+        // Trip history now remembers up to 30 lists with the last visit and progress.
+        // The old key (names only, last 5) is migrated once and left untouched.
+        const HISTORY_KEY = 'packing_history_v2';
+        const loadHistory = () => {
+            try {
+                const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || 'null');
+                if (Array.isArray(saved)) return saved.filter(x => x && x.id);
+                const old = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
+                return old.filter(x => typeof x === 'string' && x).map(id => ({ id }));
+            } catch { return []; }
+        };
+        const saveHistory = (list) => { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 30))); } catch {} };
+        const shortDate = (iso) => { if (!iso) return ''; const d = new Date(iso); return `${d.getMonth() + 1}/${d.getDate()}`; };
+
+        // Browser history keeps back navigation layered: sheet → organize mode → list → home.
+        const navState = () => (history.state && history.state.pl) ? history.state : null;
+        const urlFor = (id) => id ? `${location.pathname}?list=${encodeURIComponent(id)}` : location.pathname;
+
+        /** Reorders rows by dragging a handle; works with touch, mouse and pen. */
+        function Sortable({ items, getKey, onMove, renderItem, className = "" }) {
+            const box = useRef(null);
+            const state = useRef(null);
+            const [drag, setDrag] = useState(null);
+            const begin = (e, index) => {
+                if (e.button !== undefined && e.button !== 0) return;
+                const rows = [...box.current.children];
+                const rects = rows.map(r => r.getBoundingClientRect());
+                const gap = rects.length > 1 ? Math.max(0, rects[1].top - rects[0].bottom) : 0;
+                const s = { from: index, to: index, dy: 0, startY: e.clientY, startScroll: window.scrollY, rects, size: rects[index].height + gap };
+                state.current = s;
+                e.currentTarget.setPointerCapture(e.pointerId);
+                setDrag({ ...s });
+            };
+            const move = (e) => {
+                const s = state.current; if (!s) return;
+                if (e.clientY < 70) window.scrollBy(0, -12); else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
+                s.dy = e.clientY + window.scrollY - s.startY - s.startScroll;
+                const r = s.rects[s.from], center = r.top + r.height / 2 + s.dy;
+                let to = s.from;
+                s.rects.forEach((q, i) => { const mid = q.top + q.height / 2; if (i < s.from && center < mid) to = Math.min(to, i); if (i > s.from && center > mid) to = Math.max(to, i); });
+                s.to = to; setDrag({ ...s });
+            };
+            const end = () => { const s = state.current; state.current = null; setDrag(null); if (s && s.to !== s.from) onMove(s.from, s.to); };
+            const shift = (i) => {
+                if (!drag) return 0;
+                if (i === drag.from) return drag.dy;
+                if (drag.from < drag.to && i > drag.from && i <= drag.to) return -drag.size;
+                if (drag.to < drag.from && i >= drag.to && i < drag.from) return drag.size;
+                return 0;
+            };
+            return (
+                <div ref={box} className={className}>
+                    {items.map((item, i) => (
+                        <div key={getKey(item, i)} className={`sortable-row ${drag && drag.from === i ? 'is-dragging' : ''}`} style={{ transform: `translateY(${shift(i)}px)` }}>
+                            {renderItem(item, i, { onPointerDown: (e) => begin(e, i), onPointerMove: move, onPointerUp: end, onPointerCancel: end, className: 'drag-handle' })}
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        function Sheet({ title, onClose, children }) {
+            return (
+                <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center bg-ink/20 backdrop-blur-sm" onClick={onClose}>
+                    <div role="dialog" aria-modal="true" aria-label={title} className="sheet-enter bg-paper w-full sm:max-w-md rounded-t-[2rem] sm:rounded-[2rem] border border-stone shadow-float max-h-[85vh] overflow-y-auto safe-bottom" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between px-6 pt-5 pb-3">
+                            <h3 className="text-lg font-bold text-ink">{title}</h3>
+                            <button onClick={onClose} aria-label="關閉" className="p-2 -mr-2 rounded-full text-grass hover:bg-stone"><Icons.X /></button>
+                        </div>
+                        <div className="px-4 pb-2">{children}</div>
+                    </div>
+                </div>
+            );
+        }
+
+        function ChoiceRow({ icon, title, note, onClick, disabled }) {
+            return (
+                <button onClick={onClick} disabled={disabled} className="w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-left hover:bg-stone/60 disabled:opacity-40 disabled:hover:bg-transparent transition-colors min-h-[56px]">
+                    <span className="w-10 h-10 rounded-xl bg-moss/10 text-moss flex items-center justify-center flex-shrink-0">{icon}</span>
+                    <span className="flex-1 min-w-0"><span className="block font-bold text-ink truncate">{title}</span>{note && <span className="block text-xs text-grass mt-0.5 truncate">{note}</span>}</span>
+                    <Icons.ChevronRight size={18} className="text-stone flex-shrink-0" />
+                </button>
+            );
+        }
 
         function App() {
           const [user, setUser] = useState(null);
           const [listId, setListId] = useState('');
           const [enteredId, setEnteredId] = useState('');
-          const [data, setData] = useState(initialKidsData);
+          const [data, setData] = useState({});
           const [checkedItems, setCheckedItems] = useState([]);
-          const [categoryOrder, setCategoryOrder] = useState(DEFAULT_CATEGORY_ORDER);
+          const [categoryOrder, setCategoryOrder] = useState([]);
           const [loading, setLoading] = useState(false);
-          const [isJoined, setIsJoined] = useState(false);
+          const [missing, setMissing] = useState(false);
+          const [historyList, setHistoryList] = useState(loadHistory);
+          const [organize, setOrganize] = useState(false);
+          const [sheet, setSheet] = useState(null);          // 'move:cat:idx' | 'order' | 'share' | 'confirm' | 'menu'
+          const [confirm, setConfirm] = useState(null);
+          const [hideDone, setHideDone] = useState(() => { try { return localStorage.getItem('packing_hide_done') === '1'; } catch { return false; } });
+          const [collapsed, setCollapsed] = useState({});
           const [newItemText, setNewItemText] = useState({});
-          const [newCategoryName, setNewCategoryName] = useState("");
-          const [showHelp, setShowHelp] = useState(false);
-          
-          const [editingCategory, setEditingCategory] = useState(null);
-          const [editingName, setEditingName] = useState("");
-          
-          const [modalConfig, setModalConfig] = useState({ show: false, message: '', onConfirm: null });
-          const [savedLists, setSavedLists] = useState([]);
-          const dragItem = useRef();
-          const dragOverItem = useRef();
+          const [newCategoryName, setNewCategoryName] = useState('');
+          const [editing, setEditing] = useState(null);        // { type: 'cat'|'item', cat, idx, value }
+          const [toast, setToast] = useState(null);
+          const toastTimer = useRef(null);
+
+          const showToast = (message, undo) => {
+              clearTimeout(toastTimer.current);
+              setToast({ message, undo });
+              toastTimer.current = setTimeout(() => setToast(null), undo ? 5000 : 2200);
+          };
+
+          // Navigation ---------------------------------------------------------
+          const applyNav = (s) => {
+              const id = s && s.view === 'list' ? s.id : '';
+              setListId(id);
+              setOrganize(Boolean(s && s.organize));
+              setSheet(s && s.sheet ? s.sheet : null);
+              if (!(s && s.sheet)) { setConfirm(null); }
+              setEditing(null);
+          };
+          const push = (s, url) => { history.pushState({ pl: true, ...s }, '', url); applyNav({ ...s }); };
+          const openList = (raw) => {
+              const id = cleanId(raw || '');
+              if (!id) return;
+              setEnteredId('');
+              push({ view: 'list', id, fromHome: true }, urlFor(id));
+          };
+          const goHome = () => { const s = navState(); if (s && s.view === 'list' && s.fromHome) history.back(); else { history.replaceState({ pl: true, view: 'home' }, '', urlFor('')); applyNav(null); } };
+          const openSheet = (name) => { const s = navState() || {}; push({ ...s, view: 'list', id: listId, sheet: name }, location.href); };
+          const closeSheet = () => { const s = navState(); if (s && s.sheet) history.back(); else { setSheet(null); setConfirm(null); } };
+          const setOrganizeMode = (on) => {
+              if (on) { push({ ...(navState() || {}), view: 'list', id: listId, organize: true, sheet: null }, location.href); }
+              else { const s = navState(); if (s && s.organize && !s.sheet) history.back(); else setOrganize(false); }
+          };
 
           useEffect(() => {
-            const options = { holdToDrag: 200 };
-            MobileDragDrop.polyfill(options);
-            document.addEventListener('touchmove', function() {}, {passive: false});
-
             auth.signInAnonymously().catch((err) => console.error("登入失敗:", err));
             const unsubscribe = auth.onAuthStateChanged((u) => setUser(u));
-            const history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
-            setSavedLists(history);
-            return () => unsubscribe();
+            const fromUrl = new URLSearchParams(location.search).get('list');
+            const current = navState();
+            if (current) applyNav(current);
+            else if (fromUrl && cleanId(fromUrl)) { history.replaceState({ pl: true, view: 'list', id: cleanId(fromUrl) }, '', urlFor(cleanId(fromUrl))); applyNav({ view: 'list', id: cleanId(fromUrl) }); }
+            else history.replaceState({ pl: true, view: 'home' }, '', urlFor(''));
+            const onPop = (e) => applyNav(e.state && e.state.pl ? e.state : null);
+            window.addEventListener('popstate', onPop);
+            return () => { unsubscribe(); window.removeEventListener('popstate', onPop); };
+          }, []);
+
+          // Remember each opened list with its date and progress.
+          const remember = useCallback((id, extra) => {
+              setHistoryList(prev => {
+                  const old = prev.find(h => h.id === id) || { id };
+                  const next = [{ ...old, ...extra, id }, ...prev.filter(h => h.id !== id)];
+                  saveHistory(next);
+                  return next;
+              });
           }, []);
 
           useEffect(() => {
             if (!user || !listId) return;
-            setLoading(true);
-            const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-            const unsubscribe = docRef.onSnapshot((docSnap) => {
-              setLoading(false);
+            setLoading(true); setMissing(false); setData({}); setCheckedItems([]); setCategoryOrder([]);
+            remember(listId, { openedAt: new Date().toISOString() });
+            const unsubscribe = listRef(listId).onSnapshot({ includeMetadataChanges: true }, (docSnap) => {
               if (docSnap.exists) {
-                const remoteData = docSnap.data();
-                const newData = remoteData.listData || initialKidsData;
-                setData(newData);
-                if (remoteData.checkedItems) setCheckedItems(remoteData.checkedItems);
-                let newOrder = remoteData.categoryOrder || [];
-                const dataKeys = Object.keys(newData);
-                if (newOrder.length === 0) {
-                      newOrder = DEFAULT_CATEGORY_ORDER.filter(k => dataKeys.includes(k));
-                      dataKeys.forEach(k => { if (!newOrder.includes(k)) newOrder.push(k); });
-                } else {
-                    newOrder = newOrder.filter(k => dataKeys.includes(k));
-                    dataKeys.forEach(k => { if (!newOrder.includes(k)) newOrder.push(k); });
-                }
-                setCategoryOrder(newOrder);
-              } else {
-                docRef.set({
-                  listData: initialKidsData,
-                  checkedItems: [],
-                  categoryOrder: DEFAULT_CATEGORY_ORDER,
-                  createdAt: new Date().toISOString()
-                });
-                setData(initialKidsData);
-                setCheckedItems([]);
-                setCategoryOrder(DEFAULT_CATEGORY_ORDER);
+                const remote = docSnap.data();
+                const nextData = remote.listData || {};
+                const checked = remote.checkedItems || [];
+                setData(nextData); setCheckedItems(checked); setCategoryOrder(fullOrder(nextData, remote.categoryOrder));
+                setMissing(false); setLoading(false);
+                remember(listId, countOf(nextData, checked));
+              } else if (!docSnap.metadata.fromCache) {
+                // A new name: let the user choose what to start from instead of always using the default list.
+                setMissing(true); setLoading(false);
               }
-            }, (error) => {
-              console.error("同步錯誤:", error);
-              setLoading(false);
-            });
+            }, (error) => { console.error("同步錯誤:", error); setLoading(false); showToast('同步失敗，請檢查網路'); });
             return () => unsubscribe();
           }, [user, listId]);
 
-          const updateHistory = (newId) => {
-              let history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
-              history = history.filter(id => id !== newId);
-              history.unshift(newId);
-              if (history.length > 5) history = history.slice(0, 5);
-              localStorage.setItem('kids_packing_history', JSON.stringify(history));
-              setSavedLists(history);
-          };
+          // Writes --------------------------------------------------------------
+          const write = (payload) => listRef(listId).update(payload).catch(err => { console.error(err); showToast('儲存失敗，請重試'); });
 
-          const removeHistory = (e, idToRemove) => {
-              e.stopPropagation();
-              const newHistory = savedLists.filter(id => id !== idToRemove);
-              localStorage.setItem('kids_packing_history', JSON.stringify(newHistory));
-              setSavedLists(newHistory);
-          };
-
-          const handleJoin = (e) => {
-            e.preventDefault();
-            joinList(enteredId);
-          };
-
-          const joinList = (idToJoin) => {
-            if (!idToJoin.trim()) return;
-            const cleanId = idToJoin.trim().replace(/[^a-zA-Z0-9\u4e00-\u9fa5-_]/g, '');
-            setListId(cleanId);
-            setIsJoined(true);
-            updateHistory(cleanId);
-          };
-
-          const handleLogout = () => {
-            setIsJoined(false);
-            setListId('');
-            const history = JSON.parse(localStorage.getItem('kids_packing_history') || '[]');
-            setSavedLists(history);
-          };
-
-          const dragStart = (e, position) => {
-            if (editingCategory) return;
-            dragItem.current = position;
-            e.target.closest('.category-card').classList.add('dragging');
-          };
-
-          const dragEnter = (e, position) => {
-            if (editingCategory) return;
-            dragOverItem.current = position;
-          };
-
-          const dragEnd = (e) => {
-              e.target.closest('.category-card').classList.remove('dragging');
-              if (editingCategory) return;
-              if (dragItem.current === undefined || dragOverItem.current === undefined) return;
-              if (dragItem.current === dragOverItem.current) return;
-              const newOrder = [...categoryOrder];
-              const dragContent = newOrder[dragItem.current];
-              newOrder.splice(dragItem.current, 1);
-              newOrder.splice(dragOverItem.current, 0, dragContent);
-              setCategoryOrder(newOrder);
-              dragItem.current = null;
-              dragOverItem.current = null;
-              const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-              docRef.update({ categoryOrder: newOrder });
-          };
-
-          const showConfirm = (message, action) => {
-              setModalConfig({
-                  show: true,
-                  message,
-                  onConfirm: () => {
-                      action();
-                      setModalConfig({ show: false, message: '', onConfirm: null });
-                  }
-              });
-          };
-
-          const closeModal = () => {
-              setModalConfig({ show: false, message: '', onConfirm: null });
+          const createList = async (source) => {
+              let listData = initialKidsData, order = DEFAULT_CATEGORY_ORDER;
+              if (source === 'blank') { listData = { "未分類": [] }; order = ["未分類"]; }
+              else if (source && source !== 'default') {
+                  const snap = await listRef(source).get();
+                  if (snap.exists) { const d = snap.data(); listData = d.listData || {}; order = fullOrder(listData, d.categoryOrder); }
+              }
+              await listRef(listId).set({ listData, checkedItems: [], categoryOrder: order, createdAt: new Date().toISOString(), ...(source && source !== 'default' && source !== 'blank' ? { copiedFrom: source } : {}) });
           };
 
           const toggleCheck = (cat, item) => {
-            if (!user || !listId) return;
-            const key = `${cat}-${item}`;
-            const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-            if (checkedItems.includes(key)) {
-              docRef.update({ checkedItems: firebase.firestore.FieldValue.arrayRemove(key) });
-            } else {
-              docRef.update({ checkedItems: firebase.firestore.FieldValue.arrayUnion(key) });
-            }
+            const key = keyOf(cat, item);
+            write({ checkedItems: checkedItems.includes(key) ? firebase.firestore.FieldValue.arrayRemove(key) : firebase.firestore.FieldValue.arrayUnion(key) });
           };
 
           const addItem = (cat) => {
-            if (!user || !listId) return;
-            const text = newItemText[cat]?.trim();
+            const text = (newItemText[cat] || '').trim();
             if (!text) return;
-            const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-            const newData = { ...data };
-            if (!newData[cat]) newData[cat] = [];
-            newData[cat].push(text);
-            docRef.update({ listData: newData });
+            write({ listData: { ...data, [cat]: [...(data[cat] || []), text] } });
             setNewItemText(prev => ({ ...prev, [cat]: '' }));
           };
 
-          const deleteItem = (e, cat, itemIndex) => {
-            if (!user || !listId) return;
-            e.stopPropagation();
-            showConfirm("確定要刪除這個項目嗎？", () => {
-                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-                const newData = { ...data };
-                const itemValue = newData[cat][itemIndex];
-                const key = `${cat}-${itemValue}`;
-                newData[cat].splice(itemIndex, 1);
-                docRef.update({ 
-                  listData: newData,
-                  checkedItems: firebase.firestore.FieldValue.arrayRemove(key)
-                });
-            });
+          const deleteItem = (cat, idx) => {
+              const item = data[cat][idx], key = keyOf(cat, item), wasChecked = checkedItems.includes(key);
+              const list = data[cat].filter((_, i) => i !== idx);
+              write({ listData: { ...data, [cat]: list }, checkedItems: firebase.firestore.FieldValue.arrayRemove(key) });
+              showToast(`已刪除「${item}」`, () => {
+                  listRef(listId).get().then(snap => {
+                      const d = (snap.data() || {}).listData || {};
+                      const restored = [...(d[cat] || [])]; restored.splice(Math.min(idx, restored.length), 0, item);
+                      const payload = { listData: { ...d, [cat]: restored } };
+                      if (wasChecked) payload.checkedItems = firebase.firestore.FieldValue.arrayUnion(key);
+                      listRef(listId).update(payload);
+                  });
+              });
           };
 
-          const addNewCategory = () => {
-             if (!user || !listId) return;
+          const reorderItem = (cat, from, to) => {
+              const list = [...data[cat]]; const [moved] = list.splice(from, 1); list.splice(to, 0, moved);
+              setData(d => ({ ...d, [cat]: list }));
+              write({ listData: { ...data, [cat]: list } });
+          };
+
+          const moveItem = (cat, idx, toCat) => {
+              const item = data[cat][idx];
+              const oldKey = keyOf(cat, item), newKey = keyOf(toCat, item);
+              const nextData = { ...data, [cat]: data[cat].filter((_, i) => i !== idx), [toCat]: [...(data[toCat] || []), item] };
+              const payload = { listData: nextData };
+              if (checkedItems.includes(oldKey)) payload.checkedItems = [...checkedItems.filter(k => k !== oldKey), newKey];
+              write(payload);
+              closeSheet();
+              showToast(`已移到「${toCat}」`);
+          };
+
+          const renameItem = (cat, idx, value) => {
+              const name = value.trim(), old = data[cat][idx];
+              setEditing(null);
+              if (!name || name === old) return;
+              const list = [...data[cat]]; list[idx] = name;
+              const payload = { listData: { ...data, [cat]: list } };
+              const oldKey = keyOf(cat, old);
+              if (checkedItems.includes(oldKey)) payload.checkedItems = checkedItems.map(k => k === oldKey ? keyOf(cat, name) : k);
+              write(payload);
+          };
+
+          const renameCategory = (oldName, value) => {
+              const name = value.trim();
+              setEditing(null);
+              if (!name || name === oldName) return;
+              if (data[name]) { showToast('已經有同名分類'); return; }
+              const nextData = {};
+              Object.keys(data).forEach(k => { nextData[k === oldName ? name : k] = data[k]; });
+              const prefix = `${oldName}-`;
+              write({
+                  listData: nextData,
+                  categoryOrder: categoryOrder.map(n => n === oldName ? name : n),
+                  checkedItems: checkedItems.map(k => k.startsWith(prefix) ? `${name}-${k.substring(prefix.length)}` : k),
+              });
+          };
+
+          const addCategory = () => {
              const name = newCategoryName.trim();
              if (!name) return;
-             if (data[name]) { alert("分類已存在"); return; }
-             const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-             const newData = { ...data, [name]: [] };
-             const newOrder = [...categoryOrder, name];
-             docRef.update({ listData: newData, categoryOrder: newOrder });
-             setNewCategoryName("");
+             if (data[name]) { showToast('已經有同名分類'); return; }
+             write({ listData: { ...data, [name]: [] }, categoryOrder: [...categoryOrder, name] });
+             setNewCategoryName('');
           };
 
-          const deleteCategory = (catName) => {
-              if (!user || !listId) return;
-              showConfirm(`確定要刪除整個「${catName}」分類嗎？\n裡面的東西都會不見喔！`, () => {
-                  const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-                  const newData = { ...data };
-                  const keysToRemove = [];
-                  if (newData[catName]) {
-                      newData[catName].forEach(item => { keysToRemove.push(`${catName}-${item}`); });
-                  }
-                  delete newData[catName];
-                  const newOrder = categoryOrder.filter(c => c !== catName);
-                  let updateObj = { listData: newData, categoryOrder: newOrder };
-                  if (keysToRemove.length > 0) { updateObj.checkedItems = firebase.firestore.FieldValue.arrayRemove(...keysToRemove); }
-                  docRef.update(updateObj);
+          const deleteCategory = (cat) => {
+              setConfirm({
+                  title: `刪除「${cat}」？`,
+                  message: data[cat].length ? `裡面的 ${data[cat].length} 個項目也會一起刪除。` : '這個分類是空的。',
+                  action: '刪除分類',
+                  run: () => {
+                      const nextData = { ...data }; delete nextData[cat];
+                      const prefix = `${cat}-`;
+                      write({ listData: nextData, categoryOrder: categoryOrder.filter(c => c !== cat), checkedItems: checkedItems.filter(k => !k.startsWith(prefix)) });
+                  },
               });
+              openSheet('confirm');
           };
 
-          const startEditing = (cat) => { setEditingCategory(cat); setEditingName(cat); };
-          const cancelEditing = () => { setEditingCategory(null); setEditingName(""); };
+          const reorderCategories = (from, to) => {
+              const order = [...categoryOrder]; const [moved] = order.splice(from, 1); order.splice(to, 0, moved);
+              setCategoryOrder(order);
+              write({ categoryOrder: order });
+          };
 
-          const saveCategoryName = async (oldName) => {
-              if (!user || !listId) return;
-              const newName = editingName.trim();
-              if (!newName || newName === oldName) { cancelEditing(); return; }
-              if (data[newName]) { alert("這個名字已經有人用囉！"); return; }
-              const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-              const newOrder = categoryOrder.map(n => n === oldName ? newName : n);
-              const newCheckedItems = checkedItems.map(item => {
-                  if (item.startsWith(`${oldName}-`)) {
-                      const itemSuffix = item.substring(oldName.length + 1); 
-                      return `${newName}-${itemSuffix}`;
-                  }
-                  return item;
-              });
-              const updatePayload = {
-                  categoryOrder: newOrder,
-                  checkedItems: newCheckedItems,
-                  [`listData.${newName}`]: data[oldName], 
-                  [`listData.${oldName}`]: firebase.firestore.FieldValue.delete() 
-              };
+          const resetChecks = () => {
+              setConfirm({ title: '清除所有勾選？', message: '項目會保留，只把打包狀態清空，適合下一趟旅行再用。', action: '清除勾選', run: () => write({ checkedItems: [] }) });
+              openSheet('confirm');
+          };
+
+          const share = async () => {
+              const url = `${location.origin}${urlFor(listId)}`;
               try {
-                  await docRef.update(updatePayload);
-                  cancelEditing();
-              } catch (error) {
-                  console.error("改名失敗:", error);
-                  alert("操作失敗，請重試");
-              }
+                  if (navigator.share) { await navigator.share({ title: `行李清單：${listId}`, text: `一起整理「${listId}」的行李`, url }); return; }
+                  await navigator.clipboard.writeText(url); showToast('已複製連結，傳給家人就能一起編輯');
+              } catch (e) { if (e && e.name !== 'AbortError') showToast(`清單名稱：${listId}`); }
           };
 
-          const resetList = () => {
-            if (!user || !listId) return;
-            showConfirm("確定要重設所有勾選狀態嗎？", () => {
-                const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection(listId).doc('main');
-                docRef.update({ checkedItems: [] });
-            });
+          const removeFromHistory = (id) => {
+              const before = historyList;
+              const next = historyList.filter(h => h.id !== id);
+              setHistoryList(next); saveHistory(next);
+              showToast(`已從紀錄移除「${id}」`, () => { setHistoryList(before); saveHistory(before); });
           };
 
-          if (!isJoined) {
+          const { total, done } = useMemo(() => countOf(data, checkedItems), [data, checkedItems]);
+          const percent = total ? Math.round(done / total * 100) : 0;
+
+          const toastView = toast && (
+              <div role="status" className="toast-enter fixed left-1/2 bottom-6 z-[120] bg-ink text-paper rounded-full pl-5 pr-2 py-2 flex items-center gap-3 shadow-float max-w-[92vw]" style={{ transform: 'translateX(-50%)' }}>
+                  <span className="text-sm truncate">{toast.message}</span>
+                  {toast.undo ? <button onClick={() => { toast.undo(); setToast(null); }} className="text-sand font-bold text-sm px-3 py-1.5 rounded-full hover:bg-white/10">復原</button> : <span className="w-2" />}
+              </div>
+          );
+
+          // Home ----------------------------------------------------------------
+          if (!listId) {
+            const typed = cleanId(enteredId);
+            const exists = historyList.some(h => h.id === typed);
             return (
-              <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+              <div className="min-h-screen px-4 pt-10 pb-16 relative overflow-hidden">
                 <div className="blob-bg w-96 h-96 bg-moss -top-20 -left-20"></div>
                 <div className="blob-bg w-80 h-80 bg-clay top-40 -right-20"></div>
-                <div className="bg-white/80 backdrop-blur-md border border-white/50 p-8 rounded-[2.5rem] max-w-md w-full relative shadow-float">
-                  <div className="absolute -top-6 -left-6 bg-paper rounded-full p-4 border border-stone shadow-sm hidden sm:block"><Icons.Leaf /></div>
-                  <button onClick={() => setShowHelp(true)} className="absolute top-5 right-5 text-grass hover:text-clay transition-colors hover:rotate-12 transform duration-300"><Icons.HelpCircle /></button>
-                  <div className="text-center mb-10">
-                    <div className="inline-block p-5 rounded-[2rem] bg-moss/10 mb-4 text-moss"><Icons.OrganicBag /></div>
-                    <h1 className="text-4xl font-bold text-ink mb-2 tracking-tight">行李清單</h1>
-                    <p className="text-grass font-medium">Ready for your next journey?</p>
+                <div className="max-w-md mx-auto">
+                  <div className="flex items-center gap-3 mb-8 px-1">
+                    <span className="p-3 rounded-2xl bg-moss/10 text-moss"><Icons.Bag size={30} /></span>
+                    <h1 className="text-3xl font-bold text-ink tracking-tight">行李清單</h1>
                   </div>
-                  <form onSubmit={handleJoin} className="space-y-6">
-                    <div>
-                      <label className="block text-sm font-bold text-moss mb-2 ml-2">LIST ID</label>
-                      <input type="text" value={enteredId} onChange={(e) => setEnteredId(e.target.value)} placeholder="e.g. Kyoto_Trip" className="w-full px-6 py-4 rounded-full border border-stone bg-white/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-moss/20 focus:border-moss/50 transition-all placeholder-stone text-ink font-medium leading-tight" />
+                  <form onSubmit={(e) => { e.preventDefault(); openList(enteredId); }} className="bg-white/80 backdrop-blur-md border border-white/60 rounded-[2rem] p-4 shadow-float">
+                    <label htmlFor="list-name" className="block text-sm font-bold text-moss mb-2 ml-2">清單名稱</label>
+                    <div className="flex gap-2">
+                      <input id="list-name" type="text" value={enteredId} onChange={(e) => setEnteredId(e.target.value)} placeholder="例如：2026沖繩" autoComplete="off" className="flex-1 min-w-0 px-5 py-3 rounded-full border border-stone bg-white focus:outline-none focus:ring-2 focus:ring-moss/20 focus:border-moss/50 text-ink font-medium" />
+                      <button type="submit" disabled={!typed} className="bg-moss text-white font-bold px-5 rounded-full disabled:opacity-40 active:scale-95 transition-transform">{exists ? '開啟' : '開始'}</button>
                     </div>
-                    <button type="submit" disabled={!enteredId.trim()} className="w-full bg-moss text-mist font-bold py-4 rounded-full flex items-center justify-center gap-3 transition-all hover:scale-[1.02] hover:-translate-y-1 hover:shadow-lg disabled:opacity-50 disabled:hover:transform-none disabled:shadow-none active:scale-95 leading-tight"><Icons.LogIn />Let's Go</button>
+                    <p className="text-xs text-grass mt-3 ml-2">家人輸入同一個名稱，就能一起勾選。</p>
                   </form>
-                  {savedLists.length > 0 && (
-                    <div className="mt-10 pt-6 border-t border-stone/50">
-                        <h3 className="text-xs font-bold text-clay mb-4 flex items-center gap-2 uppercase tracking-widest pl-2"><Icons.History /> Recent</h3>
-                        <div className="space-y-3">
-                            {savedLists.map((id) => (
-                                <div key={id} onClick={() => { setEnteredId(id); joinList(id); }} className="flex items-center justify-between px-5 py-3 rounded-2xl border border-stone/50 bg-white/40 hover:bg-white hover:border-moss/30 hover:shadow-sm cursor-pointer transition-all group">
-                                    <span className="text-ink font-medium leading-tight">{id}</span>
-                                    <button onClick={(e) => removeHistory(e, id)} className="text-destructive bg-white border border-red-100 hover:bg-destructive hover:text-white p-2 rounded-full transition-all shadow-sm" title="Delete History"><Icons.Trash2 size={16} /></button>
-                                </div>
-                            ))}
-                        </div>
+
+                  <h2 className="text-sm font-bold text-clay mt-10 mb-3 ml-2">我的清單</h2>
+                  {historyList.length ? (
+                    <div className="space-y-2">
+                      {historyList.map(h => {
+                          const p = h.total ? Math.round((h.done || 0) / h.total * 100) : 0;
+                          return (
+                            <div key={h.id} className="flex items-center bg-white/70 border border-stone/70 rounded-2xl hover:border-moss/30 hover:bg-white transition-colors">
+                              <button onClick={() => openList(h.id)} className="flex-1 min-w-0 text-left px-4 py-3">
+                                <span className="block font-bold text-ink truncate">{h.id}</span>
+                                <span className="flex items-center gap-2 mt-1.5 text-xs text-grass">
+                                  {h.total !== undefined ? <>
+                                    <span className="h-1.5 w-16 bg-stone rounded-full overflow-hidden"><span className="block h-full bg-moss rounded-full" style={{ width: `${p}%` }} /></span>
+                                    <span>{h.done || 0}/{h.total}</span>
+                                  </> : <span>尚未同步進度</span>}
+                                  {h.openedAt && <span>· {shortDate(h.openedAt)}</span>}
+                                </span>
+                              </button>
+                              <button onClick={() => removeFromHistory(h.id)} aria-label={`從紀錄移除 ${h.id}`} title="從紀錄移除（不會刪除清單）" className="p-3 mr-1 rounded-full text-grass/60 hover:text-destructive hover:bg-stone/60"><Icons.X size={18} /></button>
+                            </div>
+                          );
+                      })}
                     </div>
-                  )}
-                  {showHelp && (
-                    <div className="absolute inset-0 bg-paper/95 z-50 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center animate-in fade-in duration-300">
-                        <h3 className="text-2xl font-serif font-bold text-clay mb-6">How it works</h3>
-                        <ol className="text-left text-ink space-y-4 mb-8 list-decimal pl-6 text-base font-medium leading-snug">
-                          <li>Create a name for your trip <br/><span className="text-sm text-grass font-normal">(e.g. family-camping)</span></li>
-                          <li>Share the exact name</li>
-                          <li>Pack together in real-time</li>
-                        </ol>
-                        <button onClick={() => setShowHelp(false)} className="bg-ink text-paper px-10 py-3 rounded-full font-bold hover:scale-105 transition-transform shadow-soft">Got it</button>
-                    </div>
-                  )}
+                  ) : <p className="text-sm text-grass ml-2">開過的清單會留在這裡。</p>}
                 </div>
+                {toastView}
               </div>
             );
           }
 
+          // List ------------------------------------------------------------------
+          const moveTarget = sheet && sheet.startsWith('move:') ? (() => { const [, cat, idx] = sheet.split(':'); return data[cat] && data[cat][Number(idx)] !== undefined ? { cat, idx: Number(idx), item: data[cat][Number(idx)] } : null; })() : null;
+          const templates = historyList.filter(h => h.id !== listId);
+
+          const itemRow = (cat, item, idx, handle) => {
+              const isChecked = checkedItems.includes(keyOf(cat, item));
+              if (organize) {
+                  const isEditing = editing && editing.type === 'item' && editing.cat === cat && editing.idx === idx;
+                  return (
+                      <div className="flex items-center gap-1 pl-2 pr-2 py-1.5 min-h-[48px]">
+                          <span {...handle} aria-label={`拖曳排序 ${item}`} className="drag-handle p-2 text-clay/60"><Icons.Grip size={18} /></span>
+                          {isEditing ? (
+                              <input autoFocus value={editing.value} onChange={e => setEditing({ ...editing, value: e.target.value })} onBlur={() => renameItem(cat, idx, editing.value)} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditing(null); }} className="flex-1 min-w-0 px-3 py-1.5 rounded-xl border border-clay/30 bg-white focus:outline-none text-base" />
+                          ) : (
+                              <button onClick={() => setEditing({ type: 'item', cat, idx, value: item })} className="flex-1 min-w-0 text-left px-1 py-1.5 text-base text-ink truncate" aria-label={`改名 ${item}`}>{item}</button>
+                          )}
+                          <button onClick={() => openSheet(`move:${cat}:${idx}`)} aria-label={`移動 ${item} 到其他分類`} title="移到其他分類" className="p-2 rounded-full text-grass hover:text-moss hover:bg-moss/10"><Icons.FolderInput size={18} /></button>
+                          <button onClick={() => deleteItem(cat, idx)} aria-label={`刪除 ${item}`} title="刪除" className="p-2 rounded-full text-grass hover:text-destructive hover:bg-stone/60"><Icons.Trash size={18} /></button>
+                      </div>
+                  );
+              }
+              return (
+                  <button onClick={() => toggleCheck(cat, item)} role="checkbox" aria-checked={isChecked} className={`w-full flex items-center gap-3 px-5 py-3 text-left min-h-[48px] active:bg-sand/20 transition-colors ${isChecked ? 'opacity-60' : ''}`}>
+                      <span className={`w-5 h-5 organic-checkbox border-2 flex items-center justify-center flex-shrink-0 transition-all ${isChecked ? 'bg-moss border-moss' : 'bg-white border-sand'}`}>{isChecked && <Icons.Check size={12} className="text-white" />}</span>
+                      <span className={`text-base font-medium ${isChecked ? 'text-grass line-through decoration-stone' : 'text-ink'}`}>{item}</span>
+                  </button>
+              );
+          };
+
+          const visibleCategories = categoryOrder.filter(cat => data[cat]);
+
           return (
-            <div className="min-h-screen pb-32 relative">
-                <div className="blob-bg w-[500px] h-[500px] bg-sand -top-40 -right-40 opacity-40"></div>
-                <div className="blob-bg w-[400px] h-[400px] bg-moss/20 top-80 -left-20"></div>
-              {modalConfig.show && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/10 backdrop-blur-sm p-4" onClick={closeModal}>
-                    <div className="bg-paper rounded-[2rem] p-8 max-w-xs w-full shadow-float relative flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-300 border border-stone" onClick={e => e.stopPropagation()}>
-                        <h3 className="text-xl font-serif font-bold text-ink mb-2">Are you sure?</h3>
-                        <p className="text-grass text-sm mb-8 leading-snug">{modalConfig.message}</p>
-                        <div className="flex gap-3 w-full">
-                            <button onClick={closeModal} className="flex-1 py-3 rounded-full border border-stone text-grass hover:bg-stone/30 transition-colors font-bold text-sm">Cancel</button>
-                            <button onClick={modalConfig.onConfirm} className="flex-1 py-3 rounded-full bg-destructive text-white hover:bg-red-700 hover:shadow-lg hover:-translate-y-0.5 transition-all font-bold text-sm">Confirm</button>
-                        </div>
+            <div className="min-h-screen pb-28 relative">
+              <div className="blob-bg w-[500px] h-[500px] bg-sand -top-40 -right-40 opacity-40"></div>
+              <div className="blob-bg w-[400px] h-[400px] bg-moss/20 top-80 -left-20"></div>
+
+              <header className="sticky top-0 z-30 px-3 pt-3 pb-2 bg-paper/85 backdrop-blur-md">
+                  <div className="max-w-3xl mx-auto flex items-center gap-2">
+                      <button onClick={organize ? () => setOrganizeMode(false) : goHome} aria-label={organize ? '完成整理' : '回到我的清單'} className="p-2.5 rounded-full bg-stone/60 hover:bg-stone text-ink flex-shrink-0"><Icons.ArrowLeft size={18} /></button>
+                      <div className="flex-1 min-w-0">
+                          <h1 className="text-base font-bold text-ink truncate">{listId}</h1>
+                          {!loading && !missing && <div className="flex items-center gap-2 mt-1"><span className="h-1.5 flex-1 max-w-[140px] bg-stone rounded-full overflow-hidden"><span className="block h-full bg-moss rounded-full transition-all duration-500" style={{ width: `${percent}%` }} /></span><span className="text-xs font-bold text-moss">{done}/{total}</span></div>}
+                      </div>
+                      {!organize && !missing && <button onClick={share} aria-label="分享清單" title="分享清單" className="p-2.5 rounded-full text-grass hover:text-moss hover:bg-moss/10"><Icons.Share size={19} /></button>}
+                      {!missing && <button onClick={() => setOrganizeMode(!organize)} className={`px-4 py-2 rounded-full font-bold text-sm flex-shrink-0 transition-colors ${organize ? 'bg-moss text-white' : 'bg-white border border-stone text-ink hover:border-moss/40'}`}>{organize ? '完成' : '整理'}</button>}
+                  </div>
+                  {!organize && !loading && !missing && (
+                      <div className="max-w-3xl mx-auto flex items-center gap-2 mt-2 overflow-x-auto">
+                          <button onClick={() => { const v = !hideDone; setHideDone(v); try { localStorage.setItem('packing_hide_done', v ? '1' : '0'); } catch {} }} aria-pressed={hideDone} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border whitespace-nowrap ${hideDone ? 'bg-moss/10 border-moss/30 text-moss' : 'bg-white/70 border-stone text-grass'}`}>{hideDone ? <Icons.EyeOff size={14} /> : <Icons.Eye size={14} />}只看未打包</button>
+                          <button onClick={resetChecks} disabled={!done} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-white/70 border-stone text-grass whitespace-nowrap disabled:opacity-40"><Icons.RotateCcw size={14} />清除勾選</button>
+                      </div>
+                  )}
+                  {organize && <p className="max-w-3xl mx-auto text-xs text-grass mt-2 px-1">拖曳 <Icons.Grip size={12} className="inline align-[-2px]" /> 排序，點名稱改名</p>}
+              </header>
+
+              <main className="max-w-3xl mx-auto px-3 pt-2 space-y-4">
+                {loading ? (
+                    <div className="flex flex-col justify-center items-center h-40 gap-4"><div className="w-10 h-10 rounded-full border-4 border-stone border-t-moss animate-spin"></div><p className="text-moss text-sm">正在打開清單…</p></div>
+                ) : missing ? (
+                    <div className="bg-white/80 border border-stone rounded-[2rem] p-3 shadow-soft">
+                        <h2 className="text-lg font-bold text-ink px-3 pt-3">建立「{listId}」</h2>
+                        <p className="text-sm text-grass px-3 mt-1 mb-3">要從哪裡開始？</p>
+                        {templates.length > 0 && <p className="text-xs font-bold text-clay px-3 mt-2 mb-1">沿用之前的清單（不含勾選）</p>}
+                        {templates.slice(0, 8).map(h => <ChoiceRow key={h.id} icon={<Icons.Copy size={18} />} title={h.id} note={h.total !== undefined ? `${h.total} 項` : ''} onClick={() => createList(h.id)} />)}
+                        <p className="text-xs font-bold text-clay px-3 mt-3 mb-1">全新清單</p>
+                        <ChoiceRow icon={<Icons.Sparkles size={18} />} title="預設清單" note="親子出遊常用的 5 個分類" onClick={() => createList('default')} />
+                        <ChoiceRow icon={<Icons.Plus size={18} />} title="空白清單" note="自己新增分類與項目" onClick={() => createList('blank')} />
                     </div>
-                </div>
-              )}
-              {showHelp && (
-                <div className="fixed inset-0 bg-ink/20 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                  <div className="bg-paper border border-stone rounded-[2rem] p-8 max-w-sm w-full relative shadow-float animate-in slide-in-from-bottom-4 duration-300">
-                    <button onClick={() => setShowHelp(false)} className="absolute top-6 right-6 text-stone hover:text-ink transition-colors"><Icons.X /></button>
-                    <h3 className="text-2xl font-serif font-bold text-moss mb-6 flex items-center gap-2">Guide</h3>
-                    <ul className="text-left text-ink space-y-4 mb-8 text-base leading-snug">
-                      <li className="flex gap-4 items-start"><span className="bg-sand text-ink w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">1</span><div><b>Invite:</b> Share ID <b>{listId}</b></div></li>
-                      <li className="flex gap-4 items-start"><span className="bg-sand text-ink w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">2</span><div><b>Sync:</b> Instant updates for everyone</div></li>
-                      <li className="flex gap-4 items-start"><span className="bg-sand text-ink w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold mt-0.5 flex-shrink-0">3</span><div><b>Sort:</b> Drag <Icons.GripVertical size={14} className="inline text-clay"/> to reorder</div></li>
-                    </ul>
-                    <button onClick={() => setShowHelp(false)} className="w-full bg-moss text-white py-3 rounded-full hover:bg-[#4E5F45] transition-all font-bold shadow-soft hover:shadow-lg hover:-translate-y-0.5">Understood</button>
-                  </div>
-                </div>
-              )}
-              <div className="sticky top-4 z-30 px-2 mb-6">
-                  <div className="max-w-3xl mx-auto bg-white/70 backdrop-blur-md border border-white/50 rounded-full shadow-soft px-4 py-2.5 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <button onClick={handleLogout} className="bg-stone/50 hover:bg-stone text-ink p-2 rounded-full transition-colors"><Icons.ArrowLeft size={18}/></button>
-                        <h1 className="text-base font-bold text-ink truncate leading-tight">行李清單</h1>
-                      </div>
-                      <div className="flex items-center gap-3">
-                           {(() => {
-                              let total = 0; let currentCheckedCount = 0;
-                              Object.keys(data).forEach(cat => {
-                                total += data[cat].length;
-                                data[cat].forEach(item => { if (checkedItems.includes(`${cat}-${item}`)) currentCheckedCount++; });
-                              });
-                              const percent = total === 0 ? 0 : Math.round((currentCheckedCount / total) * 100);
-                              return (
-                                <div className="flex items-center gap-2 bg-moss/10 px-3 py-1 rounded-full border border-moss/10">
-                                    <div className="h-1.5 w-14 bg-white rounded-full overflow-hidden">
-                                        <div className="h-full bg-moss transition-all duration-700 ease-in-out rounded-full" style={{ width: `${percent}%` }}></div>
-                                    </div>
-                                    <span className="text-xs font-bold text-moss">{percent}%</span>
-                                </div>
-                              );
-                            })()}
-                          <button onClick={() => setShowHelp(true)} className="text-grass hover:text-moss transition-colors"><Icons.HelpCircle /></button>
-                      </div>
-                  </div>
-              </div>
-              <div className="max-w-3xl mx-auto px-2 space-y-6">
-                {loading ? <LoadingSpinner /> : (
+                ) : (
                   <>
-                    <div className="flex justify-end px-2">
-                      <button onClick={resetList} className="text-xs font-bold bg-white/50 hover:bg-white text-grass hover:text-clay py-1.5 px-3 rounded-full border border-stone/50 flex items-center gap-2 transition-all shadow-sm hover:shadow-md leading-tight">
-                        <Icons.RefreshCw size={14} /> Reset All
-                      </button>
-                    </div>
-                    <div className="space-y-4">
-                    {categoryOrder.map((cat, index) => {
-                      if (!data[cat]) return null;
-                      const isEditing = editingCategory === cat;
+                    {total > 0 && done === total && !organize && <div className="text-center text-moss font-bold py-2">全部打包完成，出發吧！</div>}
+                    {organize && visibleCategories.length > 1 && (
+                        <button onClick={() => openSheet('order')} className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-clay/50 text-clay font-bold bg-white/50"><Icons.ListOrdered size={18} />調整分類順序</button>
+                    )}
+                    {visibleCategories.map((cat) => {
+                      const items = data[cat];
+                      const catDone = items.filter(it => checkedItems.includes(keyOf(cat, it))).length;
+                      const isCollapsed = !organize && collapsed[cat];
+                      const shown = !organize && hideDone ? items.map((it, i) => [it, i]).filter(([it]) => !checkedItems.includes(keyOf(cat, it))) : items.map((it, i) => [it, i]);
+                      if (!organize && hideDone && shown.length === 0 && items.length > 0) return null;
+                      const editingCat = editing && editing.type === 'cat' && editing.cat === cat;
                       return (
-                        <div key={cat} className="category-card bg-[#FEFEFA] rounded-[2rem] border border-stone/60 overflow-hidden shadow-soft relative transition-all duration-500 hover:-translate-y-1 hover:shadow-float" draggable={!isEditing} onDragStart={(e) => dragStart(e, index)} onDragEnter={(e) => dragEnter(e, index)} onDragEnd={dragEnd} onDragOver={(e) => e.preventDefault()}>
-                          <div className="bg-sand/30 px-6 py-4 flex items-center justify-between touch-none min-h-[60px]">
-                            {isEditing ? (
-                                <div className="flex-1 flex items-center gap-2">
-                                    <input type="text" value={editingName} onChange={(e) => setEditingName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveCategoryName(cat)} className="flex-1 px-4 py-1.5 rounded-xl bg-white/50 border border-clay/30 text-ink focus:outline-none focus:ring-2 focus:ring-clay/20 w-full font-serif font-bold text-lg leading-tight" autoFocus />
-                                    <button onClick={() => saveCategoryName(cat)} className="text-moss bg-moss/10 hover:bg-moss/20 p-2 rounded-full transition-colors"><Icons.Check size={18} /></button>
-                                    <button onClick={cancelEditing} className="text-clay bg-clay/10 hover:bg-clay/20 p-2 rounded-full transition-colors"><Icons.X size={18} /></button>
-                                </div>
+                        <section key={cat} className="bg-[#FEFEFA] rounded-[1.75rem] border border-stone/70 shadow-soft">
+                          <div className="bg-sand/30 rounded-t-[1.75rem] px-3 py-2 flex items-center gap-1 min-h-[56px]">
+                            {organize ? (
+                                editingCat ? (
+                                    <input autoFocus value={editing.value} onChange={e => setEditing({ ...editing, value: e.target.value })} onBlur={() => renameCategory(cat, editing.value)} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setEditing(null); }} className="flex-1 min-w-0 mx-1 px-3 py-1.5 rounded-xl border border-clay/30 bg-white focus:outline-none font-bold text-lg" />
+                                ) : (
+                                    <button onClick={() => setEditing({ type: 'cat', cat, value: cat })} className="flex-1 min-w-0 flex items-center gap-2 text-left px-2 py-1.5" aria-label={`改名分類 ${cat}`}><h2 className="font-bold text-ink text-lg truncate">{cat}</h2><Icons.Pencil size={14} className="text-clay/70 flex-shrink-0" /></button>
+                                )
                             ) : (
-                                <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                                    <div className="cursor-grab active:cursor-grabbing text-clay/60 hover:text-clay p-1 transition-colors flex-shrink-0"><Icons.GripVertical /></div>
-                                    <h2 className="font-serif font-bold text-ink text-lg truncate tracking-wide leading-tight">{cat}</h2>
-                                    <button onClick={() => startEditing(cat)} className="text-stone hover:text-clay p-2 rounded-full hover:bg-clay/10 transition-colors"><Icons.Pencil size={14} /></button>
-                                </div>
+                                <button onClick={() => setCollapsed(c => ({ ...c, [cat]: !c[cat] }))} aria-expanded={!isCollapsed} className="flex-1 min-w-0 flex items-center gap-2 text-left px-2 py-1.5">
+                                    <Icons.ChevronDown size={18} className={`text-clay flex-shrink-0 transition-transform ${isCollapsed ? '-rotate-90' : ''}`} />
+                                    <h2 className="font-bold text-ink text-lg truncate">{cat}</h2>
+                                    <span className={`ml-auto text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${items.length && catDone === items.length ? 'bg-moss text-white' : 'text-grass'}`}>{catDone}/{items.length}</span>
+                                </button>
                             )}
-                            {!isEditing && (
-                                <button onClick={() => deleteCategory(cat)} className="text-destructive bg-white border border-red-100 hover:bg-red-50 p-2 rounded-full transition-all ml-2 flex-shrink-0 shadow-sm" title="Delete Category"><Icons.Trash2 size={18} /></button>
-                            )}
+                            {organize && <button onClick={() => deleteCategory(cat)} aria-label={`刪除分類 ${cat}`} title="刪除分類" className="p-2 rounded-full text-grass hover:text-destructive hover:bg-white/70 flex-shrink-0"><Icons.Trash size={18} /></button>}
                           </div>
-                          <div className="divide-y divide-stone/40">
-                            {data[cat].map((item, idx) => {
-                              const isChecked = checkedItems.includes(`${cat}-${item}`);
-                              return (
-                                <div key={`${cat}-${idx}`} className={`flex items-center px-6 py-2.5 hover:bg-sand/10 transition-all duration-300 cursor-pointer group ${isChecked ? 'opacity-60 grayscale-[0.5]' : ''}`}>
-                                  <div className="flex-1 flex items-center gap-3" onClick={() => toggleCheck(cat, item)}>
-                                    <div className={`w-5 h-5 organic-checkbox border-2 flex items-center justify-center transition-all duration-300 flex-shrink-0 ${isChecked ? 'bg-moss border-moss rotate-3 scale-110' : 'bg-white border-stone group-hover:border-clay'}`}>
-                                      {isChecked && <Icons.Check className="text-white w-3 h-3" />}
-                                    </div>
-                                    <span className={`text-base font-medium transition-all leading-tight ${isChecked ? 'text-grass line-through decoration-stone' : 'text-ink'}`}>{item}</span>
-                                  </div>
-                                  <button onClick={(e) => deleteItem(e, cat, idx)} className="p-2 text-destructive/70 hover:text-destructive hover:bg-red-50 rounded-full transition-all opacity-100"><Icons.Trash2 size={16} /></button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <div className="p-3 bg-white/40 flex gap-3">
-                            <input type="text" value={newItemText[cat] || ''} onChange={(e) => setNewItemText({ ...newItemText, [cat]: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && addItem(cat)} placeholder={`Add to ${cat}...`} className="flex-1 px-4 py-2 rounded-full border border-stone bg-white/80 focus:outline-none focus:ring-2 focus:ring-moss/20 text-ink text-sm placeholder-stone/70 shadow-inner-light leading-tight" />
-                            <button onClick={() => addItem(cat)} disabled={!newItemText[cat]?.trim()} className="bg-moss hover:bg-[#4E5F45] text-white p-2.5 rounded-full shadow-md hover:shadow-lg disabled:opacity-50 disabled:shadow-none transition-all hover:rotate-90 duration-300"><Icons.Plus size={18} /></button>
-                          </div>
-                        </div>
+                          {!isCollapsed && (
+                            <>
+                              {organize ? (
+                                  <Sortable items={items} getKey={(it, i) => `${cat}-${i}-${it}`} onMove={(from, to) => reorderItem(cat, from, to)} className="divide-y divide-stone/50" renderItem={(it, i, handle) => itemRow(cat, it, i, handle)} />
+                              ) : (
+                                  <div className="divide-y divide-stone/50">{shown.map(([it, i]) => <div key={`${cat}-${i}`}>{itemRow(cat, it, i)}</div>)}</div>
+                              )}
+                              <form onSubmit={e => { e.preventDefault(); addItem(cat); }} className="px-3 py-2.5 flex gap-2 border-t border-stone/40">
+                                <input type="text" value={newItemText[cat] || ''} onChange={(e) => setNewItemText({ ...newItemText, [cat]: e.target.value })} placeholder="新增項目" aria-label={`新增項目到 ${cat}`} className="flex-1 min-w-0 px-4 py-2 rounded-full border border-stone bg-white/80 focus:outline-none focus:ring-2 focus:ring-moss/20 text-ink text-base" />
+                                <button type="submit" disabled={!(newItemText[cat] || '').trim()} aria-label={`加入 ${cat}`} className="bg-moss text-white p-2.5 rounded-full disabled:opacity-30 active:scale-95 transition-transform"><Icons.Plus size={16} /></button>
+                              </form>
+                            </>
+                          )}
+                        </section>
                       );
                     })}
-                    </div>
-                    <div className="mt-10 py-6 text-center">
-                        <h3 className="text-moss font-serif italic text-lg mb-3 opacity-80">Forget something?</h3>
-                        <div className="bg-white/60 p-1.5 rounded-full border border-stone shadow-sm inline-flex items-center gap-2 max-w-md w-full backdrop-blur-sm">
-                            <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="New Category Name..." className="flex-1 px-4 py-2 bg-transparent focus:outline-none text-ink placeholder-stone font-medium leading-tight" onKeyDown={(e) => e.key === 'Enter' && addNewCategory()} />
-                            <button onClick={addNewCategory} disabled={!newCategoryName.trim()} className="bg-clay text-white px-5 py-2.5 rounded-full font-bold hover:bg-[#A87B51] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg hover:-translate-y-0.5"><Icons.Plus size={16} /></button>
-                        </div>
-                    </div>
+                    {organize && (
+                        <form onSubmit={e => { e.preventDefault(); addCategory(); }} className="bg-white/70 p-1.5 rounded-full border border-stone flex items-center gap-2">
+                            <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="新增分類" aria-label="新增分類名稱" className="flex-1 min-w-0 px-4 py-2 bg-transparent focus:outline-none text-ink font-medium" />
+                            <button type="submit" disabled={!newCategoryName.trim()} className="bg-clay text-white px-4 py-2.5 rounded-full font-bold disabled:opacity-40 flex items-center gap-1"><Icons.Plus size={16} />分類</button>
+                        </form>
+                    )}
                   </>
                 )}
-              </div>
-              <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur border-t border-stone/50 py-2 text-center text-xs text-grass font-medium z-20">
-                Session ID: <span className="text-moss bg-moss/10 px-2 py-0.5 rounded select-all ml-1 font-bold">{listId}</span>
-              </div>
+              </main>
+
+              {sheet === 'order' && (
+                  <Sheet title="分類順序" onClose={closeSheet}>
+                      <p className="text-xs text-grass px-3 mb-2">按住右邊把手上下拖曳</p>
+                      <Sortable items={categoryOrder.filter(c => data[c])} getKey={(c) => c} onMove={reorderCategories} className="space-y-2 pb-2" renderItem={(c, i, handle) => (
+                          <div className="flex items-center gap-3 bg-white border border-stone rounded-2xl pl-4 pr-1 min-h-[52px]">
+                              <span className="flex-1 font-bold text-ink truncate">{c}</span>
+                              <span className="text-xs text-grass">{data[c].length} 項</span>
+                              <span {...handle} aria-label={`拖曳排序 ${c}`} className="drag-handle p-3 text-clay/70"><Icons.Grip size={20} /></span>
+                          </div>
+                      )} />
+                  </Sheet>
+              )}
+              {moveTarget && (
+                  <Sheet title={`把「${moveTarget.item}」移到`} onClose={closeSheet}>
+                      {visibleCategories.map(c => (
+                          <ChoiceRow key={c} icon={<Icons.FolderInput size={18} />} title={c} note={c === moveTarget.cat ? '目前分類' : `${data[c].length} 項`} disabled={c === moveTarget.cat} onClick={() => moveItem(moveTarget.cat, moveTarget.idx, c)} />
+                      ))}
+                  </Sheet>
+              )}
+              {sheet === 'confirm' && confirm && (
+                  <Sheet title={confirm.title} onClose={closeSheet}>
+                      <p className="text-sm text-grass px-3 mb-5">{confirm.message}</p>
+                      <div className="flex gap-3 px-2 pb-2">
+                          <button onClick={closeSheet} className="flex-1 py-3 rounded-full border border-stone text-ink font-bold">取消</button>
+                          <button onClick={() => { const run = confirm.run; closeSheet(); run(); }} className="flex-1 py-3 rounded-full bg-destructive text-white font-bold">{confirm.action}</button>
+                      </div>
+                  </Sheet>
+              )}
+              {toastView}
             </div>
           );
         }
